@@ -1,85 +1,73 @@
 import SpriteKit
 
-/// Builds the scenery around the tower: sky layers, parallax clouds, weather and the pillar.
-/// Everything is drawn procedurally.
+/// Builds the scenery around the tower from the generated art: painted skies, parallax clouds,
+/// weather emitters and the building the tower stands on.
 @MainActor
 enum SceneryBuilder {
-    /// Two gradient layers that cross-fade with altitude, plus a storm tint.
+    /// Day, dusk and night skies that cross-fade with altitude, plus a storm sky on top.
     final class Sky {
         let container = SKNode()
         private let day: SKSpriteNode
+        private let dusk: SKSpriteNode
         private let night: SKSpriteNode
         private let storm: SKSpriteNode
 
         init(size: CGSize) {
-            day = SKSpriteNode(texture: TextureFactory.verticalGradient(
-                size: CGSize(width: 8, height: 256),
-                colors: [
-                    UIColor(red: 0.30, green: 0.62, blue: 0.98, alpha: 1),
-                    UIColor(red: 0.55, green: 0.80, blue: 1.0, alpha: 1),
-                    UIColor(red: 0.95, green: 0.82, blue: 0.72, alpha: 1)
-                ],
-                key: "day"
-            ))
-            night = SKSpriteNode(texture: TextureFactory.verticalGradient(
-                size: CGSize(width: 8, height: 256),
-                colors: [
-                    UIColor(red: 0.03, green: 0.04, blue: 0.14, alpha: 1),
-                    UIColor(red: 0.08, green: 0.12, blue: 0.32, alpha: 1),
-                    UIColor(red: 0.22, green: 0.30, blue: 0.62, alpha: 1)
-                ],
-                key: "night"
-            ))
-            storm = SKSpriteNode(color: UIColor(red: 0.10, green: 0.12, blue: 0.22, alpha: 1), size: size)
-            day.zPosition = SceneLayer.sky
-            night.zPosition = SceneLayer.sky + 0.1
-            storm.zPosition = SceneLayer.stormTint
+            day = SKSpriteNode(texture: TextureFactory.art("sky-day"))
+            dusk = SKSpriteNode(texture: TextureFactory.art("sky-dusk"))
+            night = SKSpriteNode(texture: TextureFactory.art("sky-night"))
+            storm = SKSpriteNode(texture: TextureFactory.art("sky-storm"))
+            for (index, node) in [day, dusk, night, storm].enumerated() {
+                node.zPosition = index == 3 ? SceneLayer.stormTint : SceneLayer.sky + CGFloat(index) * 0.1
+                container.addChild(node)
+            }
+            dusk.alpha = 0
             night.alpha = 0
             storm.alpha = 0
-            container.addChild(day)
-            container.addChild(night)
-            container.addChild(storm)
             resize(to: size)
         }
 
+        /// Aspect-fills every sky sprite to the screen.
         func resize(to size: CGSize) {
-            let padded = CGSize(width: size.width + 4, height: size.height + 4)
-            day.size = padded
-            night.size = padded
-            storm.size = padded
+            for node in [day, dusk, night, storm] {
+                let texture = node.texture?.size() ?? CGSize(width: 260, height: 563)
+                let scale = max((size.width + 4) / texture.width, (size.height + 4) / texture.height)
+                node.size = CGSize(width: texture.width * scale, height: texture.height * scale)
+            }
         }
 
-        /// `altitude` in `0...1` fades the day sky into the upper atmosphere.
-        func setAltitude(_ altitude: CGFloat) {
-            night.alpha = min(max(altitude, 0), 1)
+        /// Fades from day to dusk to night as the tower climbs.
+        func setFloor(_ floor: Int) {
+            dusk.alpha = min(max((CGFloat(floor) - 12) / 16, 0), 1)
+            night.alpha = min(max((CGFloat(floor) - 38) / 18, 0), 1)
         }
 
         func setStorm(_ active: Bool) {
-            storm.run(.fadeAlpha(to: active ? 0.45 : 0, duration: 0.8), withKey: "storm")
+            storm.run(.fadeAlpha(to: active ? 0.92 : 0, duration: 0.8), withKey: "storm")
         }
     }
 
     /// Decorative clouds that scroll slower than the camera for depth.
     final class CloudLayer {
         let container = SKNode()
-        private var sprites: [(node: SKSpriteNode, speed: CGFloat, depth: CGFloat)] = []
+        private var sprites: [(node: SKSpriteNode, speed: CGFloat, depth: CGFloat, baseY: CGFloat)] = []
         private var size: CGSize
 
         init(size: CGSize, count: Int) {
             self.size = size
             container.zPosition = SceneLayer.farClouds
             var generator = SeededGenerator(seed: 77)
-            for _ in 0..<count {
-                let node = SKSpriteNode(texture: TextureFactory.cloud())
-                let scale = CGFloat.random(in: 0.5...1.4, using: &generator)
-                node.size = CGSize(width: 200 * scale, height: 100 * scale)
-                node.alpha = CGFloat.random(in: 0.35...0.8, using: &generator)
-                node.position = CGPoint(
-                    x: CGFloat.random(in: -size.width * 0.6...size.width * 0.6, using: &generator),
-                    y: CGFloat.random(in: -size.height * 0.6...size.height * 0.6, using: &generator)
-                )
+            let names = ["cloud-a", "cloud-b", "cloud-c"]
+            for index in 0..<count {
+                let node = SKSpriteNode(texture: TextureFactory.art(names[index % names.count]))
+                let width = CGFloat.random(in: 90...190, using: &generator)
+                node.size = CGSize(width: width, height: width * 0.47)
+                // Scenery clouds stay faint so the gameplay cloud reads clearly.
+                node.alpha = CGFloat.random(in: 0.35...0.6, using: &generator)
+                let baseY = CGFloat.random(in: -size.height * 0.6...size.height * 0.6, using: &generator)
+                node.position = CGPoint(x: CGFloat.random(in: -size.width * 0.6...size.width * 0.6, using: &generator), y: baseY)
                 container.addChild(node)
-                sprites.append((node, CGFloat.random(in: 6...18, using: &generator), CGFloat.random(in: 0.15...0.45, using: &generator)))
+                sprites.append((node, CGFloat.random(in: 6...18, using: &generator), CGFloat.random(in: 0.15...0.45, using: &generator), baseY))
             }
         }
 
@@ -88,44 +76,22 @@ enum SceneryBuilder {
         }
 
         /// Scrolls clouds sideways and parallaxes them against the camera height.
-        func update(dt: TimeInterval, cameraY: CGFloat) {
+        func update(dt: TimeInterval, cameraY: CGFloat, dimmed: Bool) {
             let halfWidth = size.width / 2 + 160
             let halfHeight = size.height / 2 + 80
+            let span = halfHeight * 2
             for entry in sprites {
                 var x = entry.node.position.x + entry.speed * CGFloat(dt)
                 if x > halfWidth { x = -halfWidth }
                 entry.node.position.x = x
-                // Vertical parallax: wrap within the visible band as the camera climbs.
-                let raw = entry.node.userData?["baseY"] as? CGFloat ?? entry.node.position.y
-                if entry.node.userData == nil {
-                    entry.node.userData = ["baseY": raw]
-                }
-                var y = raw - cameraY * entry.depth
-                let span = halfHeight * 2
-                y = y.truncatingRemainder(dividingBy: span)
+                var y = (entry.baseY - cameraY * entry.depth).truncatingRemainder(dividingBy: span)
                 if y > halfHeight { y -= span }
                 if y < -halfHeight { y += span }
                 entry.node.position.y = y
+                entry.node.colorBlendFactor = dimmed ? 0.55 : 0
+                entry.node.color = UIColor(red: 0.3, green: 0.34, blue: 0.48, alpha: 1)
             }
         }
-    }
-
-    static func makeStars(size: CGSize) -> SKEmitterNode {
-        let stars = SKEmitterNode()
-        stars.particleTexture = TextureFactory.softCircle(diameter: 32)
-        stars.particlePositionRange = CGVector(dx: size.width * 1.2, dy: size.height * 1.2)
-        stars.particleBirthRate = 0
-        stars.particleLifetime = 6
-        stars.particleLifetimeRange = 3
-        stars.particleScale = 0.08
-        stars.particleScaleRange = 0.05
-        stars.particleAlpha = 0
-        stars.particleAlphaSpeed = 0.6
-        stars.particleAlphaSequence = SKKeyframeSequence(keyframeValues: [0, 0.9, 0.9, 0], times: [0, 0.2, 0.8, 1])
-        stars.particleColor = .white
-        stars.particleColorBlendFactor = 1
-        stars.zPosition = SceneLayer.stars
-        return stars
     }
 
     static func makeRain(size: CGSize) -> SKEmitterNode {
@@ -161,7 +127,7 @@ enum SceneryBuilder {
         wind.emissionAngleRange = 0.05
         wind.particleScale = 0.9
         wind.particleScaleRange = 0.4
-        wind.particleAlpha = 0.5
+        wind.particleAlpha = 0.55
         wind.particleAlphaRange = 0.2
         wind.particleAlphaSpeed = -0.4
         wind.particleColor = .white
@@ -170,42 +136,25 @@ enum SceneryBuilder {
         return wind
     }
 
-    /// The tall pillar the tower stands on, reaching far below the base block.
-    static func makePillar(width: CGFloat, color: RGB) -> SKNode {
+    /// The painted building the tower stands on, with a shelf of clouds around its roof.
+    static func makePillar(width: CGFloat) -> SKNode {
         let container = SKNode()
         container.zPosition = SceneLayer.pillar
 
-        let height: CGFloat = 2400
-        let pillar = SKShapeNode(rect: CGRect(x: -width / 2, y: -height, width: width, height: height), cornerRadius: 10)
-        pillar.fillColor = UIColor(red: 0.16, green: 0.20, blue: 0.36, alpha: 1)
-        pillar.strokeColor = UIColor(red: 0.28, green: 0.34, blue: 0.55, alpha: 1)
-        pillar.lineWidth = 2
-        container.addChild(pillar)
+        let building = SKSpriteNode(texture: TextureFactory.art("tower-building"))
+        building.anchorPoint = CGPoint(x: 0.5, y: 1)
+        building.size = CGSize(width: width, height: width * 3)
+        building.position = .zero
+        container.addChild(building)
 
-        // A few lit windows so the pillar reads as a building.
-        var generator = SeededGenerator(seed: 5)
-        for row in 0..<28 {
-            let y = -22 - CGFloat(row) * 44
-            let columns = max(2, Int(width / 30))
-            for column in 0..<columns where Bool.random(using: &generator) {
-                let window = SKShapeNode(rectOf: CGSize(width: 8, height: 10), cornerRadius: 2)
-                let x = -width / 2 + width * (CGFloat(column) + 0.5) / CGFloat(columns)
-                window.position = CGPoint(x: x, y: y)
-                window.fillColor = UIColor(red: 1.0, green: 0.85, blue: 0.5, alpha: CGFloat.random(in: 0.35...0.8, using: &generator))
-                window.strokeColor = .clear
-                container.addChild(window)
-            }
-        }
-
-        // Cloud shelf around the base.
-        for (dx, scale, alpha) in [(-0.9, 0.9, 0.85), (0.0, 1.2, 0.95), (0.95, 0.85, 0.8)] as [(CGFloat, CGFloat, CGFloat)] {
-            let cloud = SKSpriteNode(texture: TextureFactory.cloud())
-            cloud.size = CGSize(width: 150 * scale, height: 75 * scale)
-            cloud.position = CGPoint(x: dx * width * 0.6, y: -28)
-            cloud.alpha = alpha
+        let names = ["cloud-a", "cloud-c", "cloud-b"]
+        for (index, (dx, scale)) in [(-0.85, 0.9), (0.0, 1.15), (0.9, 0.85)].enumerated() {
+            let cloud = SKSpriteNode(texture: TextureFactory.art(names[index]))
+            cloud.size = CGSize(width: 150 * scale, height: 70 * scale)
+            cloud.position = CGPoint(x: CGFloat(dx) * width * 0.62, y: -30)
+            cloud.zPosition = 1
             container.addChild(cloud)
         }
-
         return container
     }
 }

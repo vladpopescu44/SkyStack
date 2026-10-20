@@ -1,23 +1,23 @@
 import SpriteKit
 
-/// One tower block: a 9-slice sprite with little windows, resizable to any width.
+/// One tower floor: a 9-slice sprite of the generated block art with real window sprites on top.
 @MainActor
 final class BlockNode: SKNode {
     static let height = CGFloat(GameBalance.blockHeight)
 
     let body: SKSpriteNode
-    let color: RGB
-    private let textureKey: String
-    private var windows: [SKShapeNode] = []
+    let textureName: String
+    private let seed: Int
+    private var windows: [SKSpriteNode] = []
     private(set) var blockWidth: CGFloat
     /// Position in world coordinates, kept so the tower can re-pivot around its top.
     var worldCenter: CGPoint = .zero
 
-    init(width: CGFloat, color: RGB, textureKey: String) {
-        self.color = color
-        self.textureKey = textureKey
+    init(width: CGFloat, textureName: String, seed: Int = 0) {
+        self.textureName = textureName
+        self.seed = seed
         blockWidth = width
-        body = SKSpriteNode(texture: TextureFactory.block(color: color, key: textureKey))
+        body = SKSpriteNode(texture: TextureFactory.art(textureName))
         body.centerRect = TextureFactory.blockCenterRect
         body.size = CGSize(width: width, height: Self.height)
         super.init()
@@ -43,17 +43,20 @@ final class BlockNode: SKNode {
         layoutWindows()
     }
 
+    /// Lit and glass windows, deterministic per floor so a block never flickers between looks.
     private func layoutWindows() {
         windows.forEach { $0.removeFromParent() }
         windows.removeAll()
-        let count = max(1, Int(blockWidth / 44))
-        guard blockWidth >= 24 else { return }
+        guard blockWidth >= 22 else { return }
+        let count = max(1, Int(blockWidth / 30))
+        var state = UInt64(truncatingIfNeeded: seed &* 2654435761 &+ 97)
         for index in 0..<count {
-            let window = SKShapeNode(rectOf: CGSize(width: 10, height: 8), cornerRadius: 2.5)
-            window.fillColor = UIColor.white.withAlphaComponent(0.55)
-            window.strokeColor = .clear
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            let lit = (state >> 33) % 3 != 0
+            let window = SKSpriteNode(texture: TextureFactory.art(lit ? "window-lit" : "window-glass"))
+            window.size = CGSize(width: 10, height: 13)
             let x = -blockWidth / 2 + blockWidth * (CGFloat(index) + 0.5) / CGFloat(count)
-            window.position = CGPoint(x: x, y: -1)
+            window.position = CGPoint(x: x, y: 1)
             window.zPosition = 1
             addChild(window)
             windows.append(window)
@@ -75,7 +78,7 @@ final class BlockNode: SKNode {
         run(.sequence([.wait(forDuration: 1.2), .fadeOut(withDuration: 0.6), .removeFromParent()]))
     }
 
-    /// Sparkle ring for a perfect placement.
+    /// Sparkle ring and flash for a perfect placement.
     func playPerfect(tint: UIColor) {
         let ring = SKShapeNode(rectOf: CGSize(width: blockWidth + 8, height: Self.height + 8), cornerRadius: 12)
         ring.strokeColor = tint

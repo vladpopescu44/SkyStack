@@ -4,19 +4,19 @@ import SwiftUI
 /// Full-screen play view: SpriteKit scene underneath, SwiftUI HUD and overlays on top.
 struct GameView: View {
     @State private var viewModel: GameViewModel
-    let onQuit: (Route?) -> Void
+    let onQuit: (AppTab?) -> Void
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var fallFlashOpacity: Double = 0
 
-    init(viewModel: GameViewModel, onQuit: @escaping (Route?) -> Void) {
+    init(viewModel: GameViewModel, onQuit: @escaping (AppTab?) -> Void) {
         self.viewModel = viewModel
         self.onQuit = onQuit
     }
 
     var body: some View {
         ZStack {
-            Theme.Colors.background.ignoresSafeArea()
+            Color(red: 0.30, green: 0.62, blue: 0.98).ignoresSafeArea()
 
             if let scene = viewModel.scene {
                 SpriteView(scene: scene, isPaused: viewModel.isScenePaused, preferredFramesPerSecond: 60)
@@ -28,7 +28,9 @@ struct GameView: View {
 
             GameHUDView(
                 hud: viewModel.hud,
+                bestHeight: viewModel.bestHeight,
                 perfectPulse: viewModel.perfectPulseCount,
+                usesDropButton: viewModel.controlScheme == .button,
                 isVisible: viewModel.isRunning || viewModel.isScenePaused,
                 onPause: viewModel.pause
             )
@@ -44,6 +46,7 @@ struct GameView: View {
         .accessibilityIdentifier(AccessibilityID.Game.screen)
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        .preferredColorScheme(.light)
         .onAppear { viewModel.prepareScene() }
         .onDisappear { viewModel.tearDown() }
         .onChange(of: scenePhase) { _, newPhase in
@@ -59,7 +62,7 @@ struct GameView: View {
 
     private var fallVignette: some View {
         RadialGradient(
-            colors: [.clear, Theme.Colors.coral.opacity(0.7)],
+            colors: [.clear, Theme.Colors.coral.opacity(0.65)],
             center: .center,
             startRadius: 120,
             endRadius: 520
@@ -82,9 +85,9 @@ struct GameView: View {
                 onStart: viewModel.beginRun,
                 onQuit: { onQuit(nil) }
             )
-            .transition(.scale(scale: 0.92).combined(with: .opacity))
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         case .countdown(let value):
-            CountdownOverlay(value: value)
+            CountdownOverlay(value: value, skin: viewModel.builder)
                 .transition(.opacity)
         case .running:
             EmptyView()
@@ -100,6 +103,7 @@ struct GameView: View {
         case .finished(let outcome):
             GameOverView(
                 outcome: outcome,
+                builder: viewModel.builder,
                 onPlayAgain: viewModel.restart,
                 onWorkshop: { onQuit(.workshop) },
                 onQuit: { onQuit(nil) }
@@ -122,9 +126,9 @@ private struct DropControl: View {
                     .tracking(2)
                     .frame(maxWidth: 360)
             }
-            .buttonStyle(SkyButtonStyle())
+            .buttonStyle(BlockButtonStyle(color: Theme.Colors.coral))
             .padding(.horizontal, 24)
-            .padding(.bottom, 18)
+            .padding(.bottom, 14)
             .accessibilityLabel("Drop block")
             .accessibilityIdentifier(AccessibilityID.Game.dropButton)
         }

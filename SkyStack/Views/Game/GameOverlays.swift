@@ -1,21 +1,6 @@
 import SwiftUI
 
-/// Dimmed backdrop shared by every overlay.
-private struct OverlayScrim<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-            content
-                .frame(maxWidth: 440)
-                .padding(.horizontal, 24)
-        }
-    }
-}
-
-/// Shown before the build starts.
+/// Shown before the build starts: a shift briefing sheet rising from the bottom.
 struct ReadyOverlay: View {
     let builder: BuilderSkin
     let loadout: BuilderLoadout
@@ -26,66 +11,97 @@ struct ReadyOverlay: View {
     let onQuit: () -> Void
 
     var body: some View {
-        OverlayScrim {
-            VStack(spacing: 18) {
-                BuilderAvatarView(skin: builder, size: 120)
-                VStack(spacing: 6) {
-                    Text(builder.title)
-                        .font(.display(26))
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                    Text("Best \(Formatters.integer(bestScore)) · \(Formatters.floors(bestHeight))")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.Colors.textSecondary)
+        VStack(spacing: 0) {
+            Image("logo-wordmark")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 300)
+                .padding(.top, 40)
+                .shadow(color: Theme.Colors.ink.opacity(0.25), radius: 8, y: 4)
+                .accessibilityHidden(true)
+            Spacer()
+            VStack(spacing: 14) {
+                HStack(alignment: .bottom, spacing: 14) {
+                    BuilderPortrait(skin: builder, height: 110, isAnimated: true)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("SHIFT BRIEFING")
+                            .font(.system(size: 11, weight: .black, design: .rounded))
+                            .tracking(1.5)
+                            .foregroundStyle(Theme.Colors.inkFaint)
+                        Text(builder.title)
+                            .font(.display(26, weight: .black))
+                            .foregroundStyle(Theme.Colors.ink)
+                        Text(bestHeight > 0 ? "Record \(Formatters.floors(bestHeight)) · best \(Formatters.integer(bestScore))" : "No record yet. Make one.")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Theme.Colors.inkSoft)
+                    }
+                    Spacer(minLength: 0)
                 }
-                HStack(spacing: 8) {
-                    StatChip(systemImage: "square.stack.3d.up.fill", text: "Base \(Formatters.percent(loadout.foundationFraction))")
-                    StatChip(systemImage: "scope", text: "±\(Int(loadout.perfectTolerance.rounded())) pt", tint: Theme.Colors.star)
-                    StatChip(systemImage: "scalemass.fill", text: "Lean \(String(format: "%.1f", loadout.leanCapacity))", tint: Theme.Colors.success)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 6, alignment: .leading), GridItem(.flexible(), spacing: 6, alignment: .leading)], spacing: 6) {
+                    InkChip(image: "upgrade-foundation", text: "Base \(Formatters.percent(loadout.foundationFraction))")
+                    InkChip(image: "upgrade-precision", text: "Perfect ±\(Int(loadout.perfectTolerance.rounded())) pt")
+                    InkChip(image: "upgrade-ballast", text: "Lean limit \(String(format: "%.1f", loadout.leanCapacity))")
+                    InkChip(image: "upgrade-windbreak", text: "Gusts \(Formatters.percent(loadout.windbreakFactor))")
                 }
                 Label(
-                    controlScheme == .tap ? "Tap anywhere to drop the block" : "Press the drop button to place the block",
+                    controlScheme == .tap ? "Tap anywhere on the sky to drop" : "Press DROP to place each block",
                     systemImage: controlScheme.systemImage
                 )
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.Colors.textSecondary)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.Colors.sky)
 
                 Button(action: onStart) {
                     Label("Start building", systemImage: "arrow.up.to.line")
                 }
-                .buttonStyle(SkyButtonStyle())
+                .buttonStyle(BlockButtonStyle(color: Theme.Colors.coral))
                 .accessibilityIdentifier(AccessibilityID.Game.startButton)
 
-                Button("Back to base", action: onQuit)
-                    .buttonStyle(GhostButtonStyle())
+                Button("Back to the skyline", action: onQuit)
+                    .buttonStyle(InkTextButtonStyle())
                     .accessibilityIdentifier(AccessibilityID.Game.quitButton)
             }
-            .padding(26)
-            .cardBackground()
+            .padding(20)
+            .frame(maxWidth: 480)
+            .paperPanel(cornerRadius: 30)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 10)
         }
+        .background(
+            LinearGradient(colors: [.clear, Theme.Colors.ink.opacity(0.35)], startPoint: .center, endPoint: .bottom)
+                .ignoresSafeArea()
+        )
     }
 }
 
-/// Big animated number before the build begins.
+/// 3-2-1 painted on a falling block.
 struct CountdownOverlay: View {
     let value: Int
+    let skin: BuilderSkin
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.25).ignoresSafeArea()
-            Text("\(value)")
-                .font(.display(120, weight: .black))
-                .foregroundStyle(Theme.starGradient)
-                .shadow(color: Theme.Colors.skyDeep.opacity(0.8), radius: 30)
+            Image(skin.blockAsset(forFloor: value))
+                .resizable(capInsets: EdgeInsets(top: 10, leading: 14, bottom: 10, trailing: 14))
+                .frame(width: 150, height: 120)
+                .shadow(color: Theme.Colors.ink.opacity(0.35), radius: 12, y: 6)
+                .overlay {
+                    Text("\(value)")
+                        .font(.display(84, weight: .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: Theme.Colors.ink.opacity(0.35), radius: 0, x: 0, y: 4)
+                }
                 .id(value)
-                .transition(.scale(scale: 1.6).combined(with: .opacity))
-                .animation(.spring(duration: 0.4, bounce: 0.3), value: value)
+                .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .scale(scale: 0.6).combined(with: .opacity)))
+                .animation(.spring(duration: 0.4, bounce: 0.45), value: value)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Starting in \(value)")
     }
 }
 
-/// Pause menu.
+/// Pause menu, pinned like a clipboard note.
 struct PauseOverlay: View {
     let height: Int
     let score: Int
@@ -94,150 +110,191 @@ struct PauseOverlay: View {
     let onQuit: () -> Void
 
     var body: some View {
-        OverlayScrim {
-            VStack(spacing: 16) {
-                Image(systemName: "pause.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(Theme.skyGradient)
+        ZStack {
+            Theme.Colors.ink.opacity(0.45).ignoresSafeArea()
+            VStack(spacing: 14) {
+                Image("windsock")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 46)
+                    .rotationEffect(.degrees(24), anchor: .leading)
+                    .accessibilityHidden(true)
                 Text("Paused")
-                    .font(.display(28))
-                    .foregroundStyle(Theme.Colors.textPrimary)
-                Text("\(Formatters.floors(height)) · \(Formatters.integer(score)) points so far")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.Colors.textSecondary)
-
-                Button(action: onResume) {
-                    Label("Resume", systemImage: "play.fill")
+                    .font(.display(30, weight: .black))
+                    .foregroundStyle(Theme.Colors.ink)
+                HStack(spacing: 18) {
+                    pauseStat(value: "\(height)", title: "floors")
+                    pauseStat(value: Formatters.integer(score), title: "points")
                 }
-                .buttonStyle(SkyButtonStyle())
+                Button(action: onResume) {
+                    Label("Back to work", systemImage: "play.fill")
+                }
+                .buttonStyle(BlockButtonStyle(color: Theme.Colors.leaf))
                 .accessibilityIdentifier(AccessibilityID.Game.resumeButton)
 
                 Button(action: onRestart) {
-                    Label("Restart", systemImage: "arrow.counterclockwise")
+                    Label("Start a new tower", systemImage: "arrow.counterclockwise")
                 }
-                .buttonStyle(GhostButtonStyle())
+                .buttonStyle(BlockButtonStyle(color: Theme.Colors.sky))
                 .accessibilityIdentifier(AccessibilityID.Game.restartButton)
 
-                Button("Quit to base", action: onQuit)
-                    .buttonStyle(GhostButtonStyle())
+                Button("Leave the site", action: onQuit)
+                    .buttonStyle(InkTextButtonStyle())
                     .accessibilityIdentifier(AccessibilityID.Game.quitButton)
             }
-            .padding(26)
-            .cardBackground()
+            .padding(22)
+            .frame(maxWidth: 360)
+            .paperPanel(cornerRadius: 28)
+            .padding(.horizontal, 24)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.Game.pausedOverlay)
         }
     }
+
+    private func pauseStat(value: String, title: String) -> some View {
+        VStack(spacing: 0) {
+            Text(value)
+                .font(.display(24))
+                .foregroundStyle(Theme.Colors.ink)
+                .monospacedDigit()
+            Text(title.uppercased())
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .tracking(1.2)
+                .foregroundStyle(Theme.Colors.inkFaint)
+        }
+    }
 }
 
-/// Results card shown after the tower falls.
+/// Results as a site inspection report with a rubber stamp.
 struct GameOverView: View {
     let outcome: RunOutcome
+    let builder: BuilderSkin
     let onPlayAgain: () -> Void
     let onWorkshop: () -> Void
     let onQuit: () -> Void
 
-    @State private var revealed = false
+    @State private var stamped = false
 
-    private var columns: [GridItem] {
-        [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+    private var stampText: String {
+        if outcome.isNewHeightRecord { return "NEW\nRECORD" }
+        return outcome.summary.toppled ? "TOPPLED" : "SLIPPED"
     }
 
-    private var headline: String {
-        if outcome.isNewBest { return "NEW BEST!" }
-        if outcome.isNewHeightRecord { return "Tallest tower yet!" }
-        return outcome.summary.toppled ? "The tower toppled" : "The block slipped away"
+    private var stampColor: Color {
+        outcome.isNewHeightRecord || outcome.isNewBest ? Theme.Colors.leaf : Theme.Colors.coral
     }
 
     var body: some View {
-        OverlayScrim {
-            VStack(spacing: 18) {
-                VStack(spacing: 6) {
-                    Text(headline)
-                        .font(.display(outcome.isNewBest ? 30 : 24, weight: .black))
-                        .foregroundStyle(outcome.isNewBest ? AnyShapeStyle(Theme.starGradient) : AnyShapeStyle(Theme.Colors.textPrimary))
-                        .shadow(color: outcome.isNewBest ? Theme.Colors.star.opacity(0.7) : .clear, radius: 16)
-                        .multilineTextAlignment(.center)
-                    Text(Formatters.integer(outcome.summary.score))
-                        .font(.display(56, weight: .black))
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                    Text(outcome.isNewBest
-                         ? "Previous best \(Formatters.integer(outcome.previousBest))"
-                         : "Best \(Formatters.integer(outcome.previousBest))")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.Colors.textSecondary)
+        ZStack {
+            Theme.Colors.ink.opacity(0.5).ignoresSafeArea()
+            VStack(spacing: 0) {
+                HStack {
+                    Text("INSPECTION REPORT")
+                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                        .tracking(1.5)
+                    Spacer()
+                    Text(Formatters.runDate(.now))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                 }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Theme.Colors.ink)
 
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ResultTile(title: "Height", value: Formatters.floors(outcome.summary.height), systemImage: "building.2.fill", tint: Theme.Colors.sky)
-                    ResultTile(title: "Stars", value: "+\(Formatters.integer(outcome.summary.starsCollected))", systemImage: "star.fill", tint: Theme.Colors.star)
-                    ResultTile(title: "Perfects", value: Formatters.integer(outcome.summary.perfectPlacements), systemImage: "scope", tint: Theme.Colors.success)
-                    ResultTile(title: "Balance", value: Formatters.integer(outcome.totalStars), systemImage: "bag.fill", tint: Theme.Colors.violet)
-                }
-
-                Button(action: onPlayAgain) {
-                    Label("Build again", systemImage: "arrow.counterclockwise")
-                }
-                .buttonStyle(SkyButtonStyle())
-                .accessibilityIdentifier(AccessibilityID.Game.restartButton)
-
-                HStack(spacing: 10) {
-                    Button(action: onWorkshop) {
-                        Label("Workshop", systemImage: "wrench.and.screwdriver.fill")
+                VStack(spacing: 16) {
+                    HStack(alignment: .center, spacing: 12) {
+                        BuilderPortrait(skin: builder, height: 86)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(Formatters.floors(outcome.summary.height))
+                                .font(.display(34, weight: .black))
+                                .foregroundStyle(Theme.Colors.ink)
+                            Text(outcome.isNewBest ? "Score \(Formatters.integer(outcome.summary.score)) · new best" : "Score \(Formatters.integer(outcome.summary.score)) · best \(Formatters.integer(outcome.previousBest))")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(Theme.Colors.inkSoft)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(GhostButtonStyle())
-                    Button(action: onQuit) {
-                        Label("Base", systemImage: "house.fill")
+                    .overlay(alignment: .topTrailing) { stamp }
+
+                    VStack(spacing: 0) {
+                        reportRow(icon: "coin-star", tint: Theme.Colors.sun, title: "Stars earned", value: "+\(Formatters.integer(outcome.summary.starsCollected))")
+                        reportRow(icon: "upgrade-precision", tint: Theme.Colors.coral, title: "Perfect drops", value: Formatters.integer(outcome.summary.perfectPlacements))
+                        reportRow(icon: "cloud-a", tint: Theme.Colors.sky, title: "Cloud anchors", value: Formatters.integer(outcome.summary.anchors))
+                        reportRow(icon: "lantern", tint: Theme.Colors.sun, title: "Lanterns lit", value: Formatters.integer(outcome.summary.lanterns))
+                        reportRow(icon: "upgrade-charm", tint: Theme.Colors.violet, title: "Star balance", value: Formatters.integer(outcome.totalStars), isLast: true)
                     }
-                    .buttonStyle(GhostButtonStyle())
-                    .accessibilityIdentifier(AccessibilityID.Game.quitButton)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.Colors.paperShade))
+
+                    Button(action: onPlayAgain) {
+                        Label("Build again", systemImage: "arrow.counterclockwise")
+                    }
+                    .buttonStyle(BlockButtonStyle(color: Theme.Colors.coral))
+                    .accessibilityIdentifier(AccessibilityID.Game.restartButton)
+
+                    HStack(spacing: 10) {
+                        Button(action: onWorkshop) {
+                            Label("Workshop", systemImage: "hammer.fill").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(BlockButtonStyle(color: Theme.Colors.blueprint, compact: true))
+                        .accessibilityIdentifier(AccessibilityID.Game.workshopButton)
+                        Button(action: onQuit) {
+                            Label("Skyline", systemImage: "building.2.fill").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(BlockButtonStyle(color: Theme.Colors.sky, compact: true))
+                        .accessibilityIdentifier(AccessibilityID.Game.quitButton)
+                    }
                 }
+                .padding(18)
             }
-            .padding(24)
-            .cardBackground(isHighlighted: outcome.isNewBest)
-            .scaleEffect(revealed ? 1 : 0.9)
-            .opacity(revealed ? 1 : 0)
+            .background(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Theme.Colors.ink.opacity(0.35), radius: 20, y: 10)
+            .frame(maxWidth: 420)
+            .padding(.horizontal, 20)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier(AccessibilityID.Game.gameOverOverlay)
         }
         .onAppear {
-            withAnimation(.spring(duration: 0.5, bounce: 0.3)) {
-                revealed = true
-            }
+            withAnimation(.spring(duration: 0.45, bounce: 0.5).delay(0.25)) { stamped = true }
         }
     }
-}
 
-private struct ResultTile: View {
-    let title: String
-    let value: String
-    let systemImage: String
-    let tint: Color
+    private var stamp: some View {
+        Text(stampText)
+            .font(.display(15, weight: .black))
+            .multilineTextAlignment(.center)
+            .foregroundStyle(stampColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(stampColor, lineWidth: 3))
+            .rotationEffect(.degrees(-14))
+            .scaleEffect(stamped ? 1 : 2.2)
+            .opacity(stamped ? 0.9 : 0)
+            .offset(x: 4, y: -6)
+            .accessibilityLabel(stampText.replacingOccurrences(of: "\n", with: " "))
+    }
 
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(tint)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(tint.opacity(0.16)))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.display(17))
-                    .foregroundStyle(Theme.Colors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+    private func reportRow(icon: String, tint: Color, title: String, value: String, isLast: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                ArtIcon(image: icon, tint: tint, size: 28)
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Theme.Colors.textTertiary)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Theme.Colors.inkSoft)
+                Spacer()
+                Text(value)
+                    .font(.system(size: 15, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Theme.Colors.ink)
             }
-            Spacer(minLength: 0)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            if !isLast {
+                Rectangle()
+                    .fill(Theme.Colors.ink.opacity(0.08))
+                    .frame(height: 1)
+                    .padding(.horizontal, 12)
+            }
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.06)))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(value)")
+        .accessibilityElement(children: .combine)
     }
 }

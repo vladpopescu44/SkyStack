@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sky Stack — build above the clouds</title>
-<meta name="description" content="Sky Stack is a one-tap tower stacking game for iPhone and iPad. Drop blocks, read the wind, keep the tower straight, anchor to clouds and ride out storms. Fully offline.">
+<meta name="description" content="Sky Stack is a one-tap tower stacking game for iPhone and iPad. Drop blocks, read the wind, keep the tower level, anchor to clouds and ride out storms. Hand-drawn builders, no ads, fully offline.">
 <link rel="canonical" href="https://skystack.space/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Sky Stack — build above the clouds">
@@ -12,326 +12,349 @@
 <meta property="og:url" content="https://skystack.space/">
 <meta property="og:image" content="https://skystack.space/assets/icon-512.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0b132b">
+<meta name="theme-color" content="#3e8ef7">
 <link rel="icon" type="image/png" href="assets/icon-512.png">
 <link rel="apple-touch-icon" href="assets/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b132b; --bg-2:#101a38; --surface:#1a2647; --surface-2:#22335c;
-    --line:rgba(255,255,255,.08); --text:#fff; --muted:rgba(255,255,255,.68); --dim:rgba(255,255,255,.42);
-    --sky:#5cb8ff; --star:#ffd15c; --violet:#8c6bfa; --cloud:#e6f0ff; --success:#73e0a6; --ice:#99ccff;
-    --radius-lg:26px; --radius-md:16px;
-    --shadow:0 18px 50px rgba(0,0,0,.45);
-    --grad:linear-gradient(135deg,#5cb8ff,#3875f5 55%,#8c6bfa);
+    --ink:#1b2340; --ink-soft:rgba(27,35,64,.7); --ink-faint:rgba(27,35,64,.45);
+    --paper:#fff; --paper-shade:#edf4ff;
+    --sky:#3e8ef7; --coral:#fa6b66; --sun:#ffae3d; --leaf:#45b873; --violet:#8c6bfa; --blueprint:#173a73;
+    --radius:26px;
+    --lift:0 6px 0 rgba(27,35,64,.18);
+    --float:0 18px 40px rgba(27,35,64,.18);
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;font-family:"Nunito",system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;overflow-x:hidden}
-  body::before{content:"";position:fixed;inset:0;z-index:-1;background:
-    radial-gradient(900px 500px at 50% 110%, rgba(56,117,245,.32), transparent 60%),
-    radial-gradient(700px 400px at 85% -10%, rgba(140,107,250,.24), transparent 60%),
-    linear-gradient(180deg,#1a2957 0%,var(--bg) 40%,#060a18 100%)}
-  a{color:inherit}
+  body{margin:0;font-family:"Nunito",system-ui,-apple-system,sans-serif;color:var(--ink);background:#bfe3ff;line-height:1.55;overflow-x:hidden}
   img{max-width:100%;display:block}
-  h1,h2,h3,.btn,.logo{font-family:"Rubik","Nunito",sans-serif;letter-spacing:-.01em}
-  h1{font-size:clamp(2.6rem,7vw,4.6rem);line-height:1.02;margin:0 0 18px;font-weight:900}
-  h2.section-title{font-size:clamp(1.7rem,4vw,2.5rem);margin:0 0 10px;font-weight:900}
-  h3{font-size:1.15rem;margin:0 0 6px;font-weight:700}
+  a{color:inherit}
+  h1,h2,h3,.btn,.brand{font-family:"Baloo 2","Nunito",sans-serif;letter-spacing:-.01em;line-height:1.05}
+  h1{font-size:clamp(2.6rem,6.5vw,4.4rem);margin:0 0 16px;font-weight:800}
+  h2{font-size:clamp(1.8rem,4vw,2.7rem);margin:0 0 10px;font-weight:800}
+  h3{font-size:1.25rem;margin:0 0 6px;font-weight:800}
   p{margin:0 0 14px}
-  .wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
-  .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .eyebrow{display:inline-block;font-weight:800;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--star);margin-bottom:12px}
-  .lead{font-size:1.15rem;color:var(--muted);max-width:60ch}
-  section{padding:84px 0}
-  section.tight{padding:56px 0}
+  .wrap{width:min(1120px,calc(100% - 36px));margin:0 auto}
+  .lead{font-size:1.12rem;color:var(--ink-soft);max-width:62ch}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--coral);margin-bottom:10px}
+  section{padding:90px 0;position:relative}
+  .paper{background:var(--paper);border-radius:var(--radius);box-shadow:var(--float)}
 
-  /* header */
-  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(11,19,43,.72);border-bottom:1px solid var(--line)}
-  .nav{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:900;text-decoration:none;font-size:1.05rem}
-  .logo img{width:34px;height:34px;border-radius:9px;box-shadow:0 4px 14px rgba(56,117,245,.45)}
-  .nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;font-weight:700;font-size:.95rem}
-  .nav ul a{text-decoration:none;color:var(--muted)}
-  .nav ul a:hover{color:var(--text)}
-  @media (max-width:860px){.nav ul{display:none}}
+  .sky{background:linear-gradient(180deg,#2e7bea 0%,#6fb6ff 45%,#bfe3ff 78%,#ffe3c4 100%);position:relative;overflow:hidden}
+  .cloud{position:absolute;z-index:0;opacity:.8;pointer-events:none;animation:drift linear infinite}
+  .sky>.wrap,.sky>header{position:relative;z-index:2}
+  @keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
 
-  /* buttons */
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;font-weight:800;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease;border:1px solid transparent}
-  .btn:hover{transform:translateY(-2px)}
-  .btn-primary{background:var(--grad);color:#fff;box-shadow:0 12px 30px rgba(56,117,245,.45)}
-  .btn-ghost{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16);color:#fff}
-  .btn-store{background:#000;border-color:rgba(255,255,255,.25);color:#fff;opacity:.85;cursor:default}
-  .btn-store small{display:block;font-size:.65rem;font-weight:600;opacity:.8;line-height:1}
-  .btn-store span{display:block;font-size:1rem;line-height:1.1}
+  header{position:sticky;top:0;z-index:50;padding:12px 0}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;padding:8px 10px 8px 18px;box-shadow:var(--lift)}
+  .brand img{height:34px;width:auto}
+  .bar nav{display:flex;gap:4px}
+  .bar nav a{text-decoration:none;font-weight:800;font-size:.92rem;color:var(--ink-soft);padding:8px 12px;border-radius:999px}
+  .bar nav a:hover{background:var(--paper-shade);color:var(--ink)}
+  @media (max-width:900px){.bar nav{display:none}}
 
-  /* hero */
-  .hero{padding:70px 0 40px}
-  .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
-  @media (max-width:900px){.hero-grid{grid-template-columns:1fr}}
-  .hero .tag{display:inline-flex;gap:8px;align-items:center;padding:8px 14px;border-radius:999px;background:rgba(255,209,92,.14);border:1px solid rgba(255,209,92,.35);font-weight:800;font-size:.85rem;margin-bottom:20px}
-  .hero .cta{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0 18px}
-  .hero .meta{display:flex;flex-wrap:wrap;gap:10px 18px;color:var(--dim);font-size:.9rem;font-weight:700}
-  .phone{position:relative;width:min(300px,80%);margin:0 auto;border-radius:44px;padding:12px;background:#0d1530;border:1px solid rgba(255,255,255,.14);box-shadow:var(--shadow),0 0 80px rgba(92,184,255,.28)}
-  .phone img{border-radius:34px}
-  .phone.float{animation:float 6s ease-in-out infinite}
-  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .btn{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem;color:#fff;text-decoration:none;padding:14px 24px;border-radius:20px;background:var(--c,var(--sky));box-shadow:0 6px 0 rgba(0,0,0,.25),inset 0 3px 0 rgba(255,255,255,.35);transition:transform .12s ease,box-shadow .12s ease}
+  .btn:hover{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.25),inset 0 3px 0 rgba(255,255,255,.35)}
+  .btn.coral{--c:var(--coral)} .btn.ink{--c:var(--ink)}
+  .btn small{display:block;font-size:.7rem;opacity:.8;font-family:"Nunito";font-weight:800}
 
-  /* cards */
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-  .card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 40%);pointer-events:none}
-  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-  @media (max-width:980px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:620px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
-  .icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;margin-bottom:14px;background:rgba(255,209,92,.14)}
-  .icon.sky{background:rgba(92,184,255,.18)} .icon.ice{background:rgba(153,204,255,.16)} .icon.ash{background:rgba(230,240,255,.14)} .icon.green{background:rgba(115,219,140,.16)} .icon.violet{background:rgba(178,128,255,.18)}
-  .step{counter-increment:step}
-  .step .num{font-family:"Rubik";font-weight:900;font-size:2.6rem;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px}
-  .card p{color:var(--muted);margin:0}
-  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:.8rem;font-weight:800;color:var(--muted)}
-  .pill.ok{background:rgba(115,219,140,.14);color:var(--success)}
-  .pill.lock{background:rgba(255,255,255,.06);color:var(--dim)}
+  .hero{padding:0;min-height:760px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:end}
+  @media (max-width:920px){.hero-grid{grid-template-columns:1fr}}
+  .hero-copy{padding:60px 0 120px;position:relative;z-index:4}
+  .hero-copy .logo{width:min(440px,90%);margin-bottom:22px;filter:drop-shadow(0 10px 16px rgba(27,35,64,.25))}
+  .hero-copy h1{color:#fff;text-shadow:0 4px 0 rgba(27,35,64,.25)}
+  .hero-copy .lead{color:rgba(255,255,255,.95);font-weight:600}
+  .cta{display:flex;flex-wrap:wrap;gap:14px;margin:26px 0 18px}
+  .facts{display:flex;flex-wrap:wrap;gap:8px}
+  .fact{background:rgba(255,255,255,.92);border-radius:999px;padding:6px 12px 6px 6px;font-weight:800;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 0 rgba(27,35,64,.15)}
+  .fact img{width:24px;height:24px}
+  .hero-stage{position:relative;height:680px;z-index:2}
+  .phone{position:absolute;right:6%;bottom:40px;width:300px;border-radius:46px;padding:11px;background:#fff;box-shadow:0 30px 60px rgba(27,35,64,.35)}
+  .phone img{border-radius:36px}
+  .hero-stage .builder{position:absolute;left:0;bottom:60px;width:190px;filter:drop-shadow(0 12px 14px rgba(27,35,64,.3));animation:bob 3s ease-in-out infinite}
+  .hero-stage .podium{position:absolute;left:-40px;bottom:0;width:290px}
+  @keyframes bob{50%{transform:translateY(-10px)}}
+  @media (max-width:920px){.hero-stage{height:620px}.phone{right:50%;transform:translateX(50%)}.hero-stage .builder,.hero-stage .podium{display:none}}
+  .ground{height:110px;background:url(assets/art/cloud-b.png) repeat-x bottom/320px auto;position:absolute;left:0;right:0;bottom:-36px;z-index:3}
 
-  /* mechanics */
-  .mech{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-  @media (max-width:760px){.mech{grid-template-columns:1fr}}
-  .mech .card{padding:30px}
-  .mech .bar{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:16px}
-  .mech .bar i{display:block;height:100%;width:72%;background:var(--grad)}
+  .steps{display:grid;gap:14px;max-width:760px;margin:30px auto 0;text-align:left}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;padding:18px 22px;border-radius:22px;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.18),inset 0 4px 0 rgba(255,255,255,.3)}
+  .step:nth-child(1){background:#4f96f0;margin-right:60px}
+  .step:nth-child(2){background:#3fae63;margin-left:30px;margin-right:30px}
+  .step:nth-child(3){background:#ea5a55;margin-left:60px}
+  @media (max-width:620px){.step{margin:0!important}}
+  .step .n{font-family:"Baloo 2";font-weight:800;font-size:2.6rem;line-height:1;width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.25);display:grid;place-items:center}
+  .step p{margin:0;font-weight:700}
+  .center{text-align:center}.center .lead{margin:0 auto}
 
-  /* builders */
-  .runner{display:flex;gap:14px;align-items:center}
-  .runner .dot{width:54px;height:54px;border-radius:18px;flex:none;border:3px solid rgba(255,255,255,.2);box-shadow:0 0 24px var(--g,rgba(92,184,255,.5))}
-  .runner small{color:var(--dim);font-weight:700}
+  .mech{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:32px}
+  @media (max-width:800px){.mech{grid-template-columns:1fr}}
+  .mech article{padding:14px 14px 22px}
+  .mech article img{border-radius:18px;width:100%;aspect-ratio:3/2;object-fit:cover;margin-bottom:16px}
+  .mech article h3,.mech article p{padding:0 8px}
+  .mech article p{color:var(--ink-soft);margin:0}
+  .tag{display:inline-block;font-size:.72rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--paper-shade);color:var(--sky);margin:0 8px 8px}
 
-  /* gallery */
-  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .blueprint{background:var(--blueprint) url(assets/art/blueprint-grid.png) repeat;background-size:240px;color:#fff}
+  .blueprint .lead{color:rgba(255,255,255,.82)}
+  .blueprint .kicker{color:var(--sun)}
+  .plans{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:32px}
+  @media (max-width:980px){.plans{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:520px){.plans{grid-template-columns:1fr}}
+  .plan{border:2px dashed rgba(255,255,255,.55);border-radius:18px;padding:18px;text-align:center;background:rgba(255,255,255,.05)}
+  .plan img{width:96px;height:96px;margin:0 auto 10px}
+  .plan p{color:rgba(255,255,255,.82);font-size:.92rem;margin:0}
+  .plan .eff{display:inline-block;margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:var(--sun);font-weight:700}
+
+  .crew{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:34px}
+  @media (max-width:980px){.crew{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:520px){.crew{grid-template-columns:repeat(2,1fr)}}
+  .member{text-align:center;padding:16px 10px 18px}
+  .member .pic{position:relative;height:170px;display:flex;align-items:flex-end;justify-content:center}
+  .member .pic img.cloud-base{position:absolute;bottom:-10px;width:150px}
+  .member .pic img.who{position:relative;width:120px;filter:drop-shadow(0 8px 8px rgba(27,35,64,.25))}
+  .member h3{margin-top:12px}
+  .member small{display:block;color:var(--ink-soft);font-weight:700;min-height:2.6em}
+  .price{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-weight:900;font-size:.85rem;background:var(--paper-shade);padding:4px 10px 4px 4px;border-radius:999px}
+  .price img{width:20px;height:20px}
+  .price.free{background:rgba(69,184,115,.15);color:#2f8a52;padding:4px 10px}
+
+  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:30px}
   @media (max-width:980px){.gallery{grid-template-columns:repeat(2,1fr)}}
-  @media (max-width:520px){.gallery{grid-template-columns:1fr}}
-  .shot{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:10px;box-shadow:var(--shadow)}
-  .shot img{border-radius:16px;aspect-ratio:402/874;object-fit:cover;width:100%}
-  .shot figcaption{padding:12px 6px 4px;font-weight:700;color:var(--muted);font-size:.9rem}
+  .shot{padding:10px;margin:0}
+  .shot img{border-radius:18px;aspect-ratio:402/874;object-fit:cover;width:100%}
+  .shot figcaption{padding:10px 6px 2px;font-weight:800;font-size:.92rem;color:var(--ink-soft)}
+  .shot:nth-child(odd){transform:rotate(-1.2deg)} .shot:nth-child(even){transform:rotate(1.2deg)}
 
-  /* platforms */
-  .platforms{display:flex;flex-wrap:wrap;gap:12px}
-  .platforms .pill{font-size:.95rem;padding:12px 16px;color:var(--text)}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .chips span{background:#fff;border-radius:999px;padding:10px 16px;font-weight:800;box-shadow:0 4px 0 rgba(27,35,64,.15)}
 
-  /* support */
-  .faq details{border-top:1px solid var(--line);padding:16px 0}
-  .faq details:last-child{border-bottom:1px solid var(--line)}
-  .faq summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between;gap:12px}
-  .faq summary::after{content:"+";color:var(--star);font-weight:900}
+  .support{display:grid;grid-template-columns:1fr 1.2fr;gap:24px;align-items:start}
+  @media (max-width:860px){.support{grid-template-columns:1fr}}
+  .mail{display:inline-block;margin-top:6px;font-family:"Baloo 2";font-weight:800;font-size:1.4rem;color:#2a6fd6;text-decoration:none}
+  .faq{padding:10px 24px}
+  .faq details{border-bottom:2px solid var(--paper-shade);padding:16px 0}
+  .faq details:last-child{border-bottom:0}
+  .faq summary{cursor:pointer;font-weight:900;list-style:none;display:flex;justify-content:space-between;gap:14px}
+  .faq summary::after{content:"+";color:var(--coral);font-weight:900;font-size:1.3rem;line-height:1}
   .faq details[open] summary::after{content:"–"}
-  .faq p{color:var(--muted);margin:10px 0 0}
-  .email{font-family:"Rubik";font-weight:700;font-size:1.25rem;text-decoration:none;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .faq p{color:var(--ink-soft);margin:10px 0 0}
 
-  /* legal */
-  .legal{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .legal .wrap{max-width:820px}
-  .legal h3{margin-top:26px;color:var(--star)}
-  .legal p,.legal li{color:var(--muted)}
-  .legal .updated{color:var(--dim);font-weight:700;font-size:.9rem}
+  .legal{background:var(--paper-shade)}
+  .report{max-width:860px;margin:0 auto 28px;overflow:hidden}
+  .report .head{background:var(--ink);color:#fff;display:flex;justify-content:space-between;gap:10px;padding:12px 24px;font-family:ui-monospace,Menlo,monospace;font-size:.82rem;letter-spacing:.12em;font-weight:700}
+  .report .body{padding:26px 28px}
+  .report h3{margin-top:22px;color:#2a6fd6}
+  .report h3:first-of-type{margin-top:6px}
+  .report p{color:var(--ink-soft)}
 
-  /* footer */
-  footer{padding:50px 0 36px;color:var(--dim)}
-  .foot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px}
+  footer{background:var(--ink);color:rgba(255,255,255,.78);padding:50px 0 34px}
+  .foot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:26px}
   @media (max-width:760px){.foot{grid-template-columns:1fr 1fr}}
-  footer h4{margin:0 0 10px;color:var(--text);font-family:"Rubik"}
+  footer h4{margin:0 0 10px;color:#fff;font-family:"Baloo 2";font-size:1.1rem}
   footer ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-  footer a{text-decoration:none;color:var(--muted)} footer a:hover{color:var(--text)}
-  .copy{margin-top:30px;padding-top:20px;border-top:1px solid var(--line);font-size:.9rem}
-  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
-  .reveal.in{opacity:1;transform:none}
-  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.phone.float{animation:none}}
+  footer a{text-decoration:none} footer a:hover{color:#fff}
+  .copy{margin-top:30px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);font-size:.9rem}
+  .js .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+  .js .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.js .reveal{opacity:1;transform:none;transition:none}.cloud,.hero-stage .builder{animation:none}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wrap nav">
-    <a class="logo" href="#"><img src="assets/icon-512.png" alt="">Sky Stack</a>
-    <ul>
-      <li><a href="#about">About</a></li>
-      <li><a href="#how">How it works</a></li>
-      <li><a href="#mechanics">Mechanics</a></li>
-      <li><a href="#builders">Builders</a></li>
-      <li><a href="#screens">Screenshots</a></li>
-      <li><a href="#devices">Platforms</a></li>
-      <li><a href="#support">Support</a></li>
-    </ul>
+<div class="sky hero">
+  <img class="cloud" src="assets/art/cloud-a.png" alt="" style="top:120px;width:220px;animation-duration:70s">
+  <img class="cloud" src="assets/art/cloud-c.png" alt="" style="top:330px;width:300px;animation-duration:95s;animation-delay:-40s">
+  <img class="cloud" src="assets/art/cloud-b.png" alt="" style="top:520px;width:200px;animation-duration:80s;animation-delay:-20s">
+
+  <header>
+    <div class="wrap bar">
+      <a class="brand" href="#"><img src="assets/art/logo-wordmark.png" alt="Sky Stack"></a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#mechanics">Mechanics</a>
+        <a href="#workshop">Workshop</a>
+        <a href="#crew">Crew</a>
+        <a href="#screens">Screenshots</a>
+        <a href="#support">Support</a>
+      </nav>
+      <a class="btn coral" href="#screens" style="padding:10px 18px;font-size:1rem">See it</a>
+    </div>
+  </header>
+
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <img class="logo" src="assets/art/logo-wordmark.png" alt="">
+      <h1>Build above the clouds.</h1>
+      <p class="lead">A block swings over your tower. Tap to drop it. Whatever hangs over the edge breaks off, so every floor gets narrower, unless you land it perfectly. Read the wind, keep the tower level, anchor to passing clouds and ride out the storms.</p>
+      <div class="cta">
+        <span class="btn ink" title="Coming soon"><span><small>Coming soon on the</small>App Store</span></span>
+        <a class="btn" href="#how">How it works</a>
+      </div>
+      <div class="facts">
+        <span class="fact"><img src="assets/art/coin-star.png" alt="">No ads, no purchases</span>
+        <span class="fact"><img src="assets/art/cloud-a.png" alt="">Fully offline</span>
+        <span class="fact"><img src="assets/art/upgrade-foundation.png" alt="">iPhone &amp; iPad · iOS 18+</span>
+      </div>
+    </div>
+    <div class="hero-stage">
+      <img class="podium" src="assets/art/podium-cloud.png" alt="">
+      <img class="builder" src="assets/art/builder-kite.png" alt="Kite, one of the six builders">
+      <div class="phone"><img src="assets/screens/run-wind.png" alt="Sky Stack gameplay: a tower of colourful floors on a painted building, a windsock warning of a gust"></div>
+    </div>
   </div>
-</header>
+  <div class="ground"></div>
+</div>
 
 <main>
-  <section class="hero">
-    <div class="wrap hero-grid">
-      <div>
-        <span class="tag">☁️ A one-tap tower game with weather</span>
-        <h1>Build above the <span class="grad-text">clouds.</span></h1>
-        <p class="lead">A block swings over your tower. Tap to drop it. Whatever hangs over the edge breaks off, so every floor is a little narrower than the last, unless you land it perfectly. Read the wind, keep the tower straight, anchor to passing clouds and ride out the storms.</p>
-        <div class="cta">
-          <a class="btn btn-primary" href="#screens">See screenshots</a>
-          <a class="btn btn-ghost" href="#how">How it works</a>
-          <span class="btn btn-store" title="Coming soon"><small>Coming soon on the</small><span> App Store</span></span>
-        </div>
-        <div class="meta"><span>📱 iPhone &amp; iPad</span><span>⚙️ iOS 18+</span><span>✈️ Fully offline</span><span>🚫 No ads, no accounts</span></div>
-      </div>
-      <div class="phone float"><img src="assets/screens/run-storm.png" alt="Sky Stack gameplay: a ten-floor tower of colourful blocks in a storm, with gust and storm banners above"></div>
-    </div>
-  </section>
-
-  <section id="about" class="tight">
-    <div class="wrap">
-      <span class="eyebrow">About the game</span>
-      <h2 class="section-title">One tap. One block. One very tall tower.</h2>
-      <p class="lead">Sky Stack is a pick-up-and-play stacking game. The controls fit in one sentence, but the sky has opinions: gusts push your block, the tower leans with every sloppy drop, and storms roll in just when you are getting comfortable.</p>
-      <div class="grid-3 reveal" style="margin-top:28px">
-        <div class="card"><div class="icon sky">🧱</div><h3>Precision stacking</h3><p>Overhang is trimmed away. Land within the perfect zone and the block snaps into place at full width, and perfect streaks multiply your score.</p></div>
-        <div class="card"><div class="icon">⭐</div><h3>Stars are your economy</h3><p>Every floor pays stars. Perfects, cloud anchors and storm floors pay more. Spend them in the Workshop and on new builders.</p></div>
-        <div class="card"><div class="icon ice">🛠️</div><h3>Permanent progress</h3><p>A wider foundation, steadier hands, windbreaks, ballast and a star charm: five upgrades that turn ten floors into fifty.</p></div>
+  <section id="how" style="background:#fff">
+    <div class="wrap center">
+      <span class="kicker">How it works</span>
+      <h2>Three floors of rules. That's it.</h2>
+      <p class="lead">Sky Stack fits in one sentence and still takes a while to master. Every build stacks the same three steps.</p>
+      <div class="steps reveal">
+        <div class="step"><div class="n">1</div><div><h3>Drop</h3><p>Tap anywhere on the sky to let the swinging block fall. Prefer a button? Switch to the big DROP button in Settings.</p></div></div>
+        <div class="step"><div class="n">2</div><div><h3>Stack and adapt</h3><p>Overhang is trimmed away. Perfect drops keep full width. The sky warns you before every gust and storm.</p></div></div>
+        <div class="step"><div class="n">3</div><div><h3>Upgrade</h3><p>Spend the stars you earned in the Workshop, hire new builders and climb higher next time.</p></div></div>
       </div>
     </div>
   </section>
 
-  <section id="how">
-    <div class="wrap">
-      <span class="eyebrow">How it works</span>
-      <h2 class="section-title">Three steps, every build.</h2>
-      <div class="grid-3 reveal" style="margin-top:24px">
-        <div class="card step"><div class="num">1</div><h3>Drop</h3><p>Tap anywhere to let the swinging block fall. Prefer a dedicated control? Switch to the big drop button in Settings.</p></div>
-        <div class="card step"><div class="num">2</div><h3>Stack &amp; adapt</h3><p>Watch the banners and the lean meter. The sky always warns you before a gust or a storm arrives.</p></div>
-        <div class="card step"><div class="num">3</div><h3>Upgrade</h3><p>Spend stars in the Workshop, unlock builders with their own block colours and climb higher next time.</p></div>
+  <section id="mechanics" class="sky">
+    <img class="cloud" src="assets/art/cloud-c.png" alt="" style="top:40px;width:260px;animation-duration:90s;animation-delay:-30s">
+    <div class="wrap" style="position:relative">
+      <span class="kicker" style="color:#fff">Signature mechanics</span>
+      <h2 style="color:#fff;text-shadow:0 3px 0 rgba(27,35,64,.25)">Four systems that make every tower different.</h2>
+      <p class="lead" style="color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(27,35,64,.35)">They are not power-ups you collect. They are the weather and physics of the sky, and they play off each other.</p>
+      <div class="mech reveal">
+        <article class="paper"><img src="assets/art/howto-wind.png" alt="Wind streaks pushing a block toward a windsock"><span class="tag">Wind gusts</span><h3>Read the wind</h3><p>A windsock and a banner warn which way the next gust will blow. While it blows, the block drifts and slides a little after it lands, so you drop early against the wind. Storm gusts hit much harder.</p></article>
+        <article class="paper"><img src="assets/art/howto-lean.png" alt="A leaning tower and a spirit level with the bubble near the red end"><span class="tag">Tower lean</span><h3>Keep it level</h3><p>Every off-centre drop tilts the whole tower. A spirit level at the bottom of the screen shows how close it is to giving way. Past the red mark it topples, however wide your blocks are. Perfects pull it back.</p></article>
+        <article class="paper"><img src="assets/art/howto-cloud.png" alt="A cloud beside the top of the tower and a block glowing as it anchors"><span class="tag">Cloud anchors</span><h3>Catch a cloud</h3><p>Now and then a glowing cloud drifts past the top of the tower. Land a block while the cloud covers it and the tower anchors: the floor grows back to near full width and the lean resets to zero.</p></article>
+        <article class="paper"><img src="assets/art/howto-storm.png" alt="Dark storm clouds, lightning and a star coin with times two"><span class="tag">Storm bands · Sky Lantern</span><h3>Weather the storm</h3><p>From floor 10 a five-floor storm rolls in, then returns every twelve floors. Gusts get stronger and every floor pays double. Three perfects inside one storm light the Sky Lantern, and the next three blocks centre themselves.</p></article>
       </div>
     </div>
   </section>
 
-  <section id="mechanics" class="tight">
+  <section id="workshop" class="blueprint">
     <div class="wrap">
-      <span class="eyebrow">Signature mechanics</span>
-      <h2 class="section-title">Four systems that make every tower different.</h2>
-      <p class="lead">These are not power-ups you pick up. They are the weather and physics of the sky, and they play off each other.</p>
-      <div class="mech reveal" style="margin-top:28px">
-        <div class="card"><div class="icon ash">🌬️</div><h3>Wind Gusts</h3><p>A banner warns which way the next gust will blow. While it blows, the swinging block drifts and slides a little after it lands, so you drop early against the wind. Storm gusts are much stronger.</p></div>
-        <div class="card"><div class="icon green">⚖️</div><h3>Tower Lean</h3><p>Every off-centre drop tilts the whole tower. The lean meter shows how close it is to giving way. Push past the limit and it topples, however wide your blocks are. Perfects pull it back toward centre.</p><div class="bar"><i></i></div></div>
-        <div class="card"><div class="icon sky">☁️</div><h3>Cloud Anchors</h3><p>Now and then a cloud drifts across the top of the tower. Land a block while the cloud covers it and the tower anchors: the block grows back to near full width and the lean resets to zero.</p></div>
-        <div class="card"><div class="icon violet">⛈️</div><h3>Storm Bands &amp; Sky Lantern</h3><p>From floor 10, a five-floor storm returns every twelve floors. The sky darkens, gusts get stronger and every floor pays double. Three perfects inside one storm light the <strong>Sky Lantern</strong>, and the next three blocks centre themselves.</p></div>
+      <span class="kicker">The workshop</span>
+      <h2>Five blueprints for a taller tower.</h2>
+      <p class="lead">Stars come only from building: every floor, every perfect drop, every cloud anchor and every storm floor. Spend them on permanent plans.</p>
+      <div class="plans reveal">
+        <div class="plan"><img src="assets/art/upgrade-foundation.png" alt=""><h3>Foundation</h3><p>A wider base block gives you more room for mistakes.</p><span class="eff">58% → 78% width</span></div>
+        <div class="plan"><img src="assets/art/upgrade-precision.png" alt=""><h3>Steady Hands</h3><p>Widens the perfect zone so more drops snap into place.</p><span class="eff">±6 → ±15 pt</span></div>
+        <div class="plan"><img src="assets/art/upgrade-windbreak.png" alt=""><h3>Windbreak</h3><p>Weakens how far gusts push and slide your blocks.</p><span class="eff">100% → 30% gusts</span></div>
+        <div class="plan"><img src="assets/art/upgrade-ballast.png" alt=""><h3>Ballast</h3><p>Lets the tower lean further before it topples.</p><span class="eff">lean 1.0 → 2.1</span></div>
+        <div class="plan"><img src="assets/art/upgrade-charm.png" alt=""><h3>Star Charm</h3><p>Every star you earn is worth more.</p><span class="eff">×1 → ×2.5 stars</span></div>
       </div>
     </div>
   </section>
 
-  <section id="builders">
-    <div class="wrap">
-      <span class="eyebrow">Builders</span>
-      <h2 class="section-title">Six builders, one free, five to earn.</h2>
-      <p class="lead">Every builder plays the same. Each one paints the tower in their own palette. Unlock them with stars you earned yourself.</p>
-      <div class="grid-3 reveal" style="margin-top:24px">
-        <div class="card runner"><div class="dot" style="background:#facc66;--g:rgba(102,204,255,.55)"></div><div><h3>Sparrow</h3><small>Small, quick and never afraid of heights. · <span class="pill ok">Free</span></small></div></div>
-        <div class="card runner"><div class="dot" style="background:#fa8066;--g:rgba(255,217,115,.6)"></div><div><h3>Kite</h3><small>Rides every gust like it was invited. · <span class="pill">150 stars</span></small></div></div>
-        <div class="card runner"><div class="dot" style="background:#9ee0e6;--g:rgba(204,255,242,.6)"></div><div><h3>Heron</h3><small>Patient hands, perfectly level blocks. · <span class="pill">350 stars</span></small></div></div>
-        <div class="card runner"><div class="dot" style="background:#8ceab3;--g:rgba(191,153,255,.6)"></div><div><h3>Aurora</h3><small>Builds by the light of the northern sky. · <span class="pill">600 stars</span></small></div></div>
-        <div class="card runner"><div class="dot" style="background:#ff9e40;--g:rgba(255,230,128,.6)"></div><div><h3>Comet</h3><small>Leaves a trail of sparks on every floor. · <span class="pill">900 stars</span></small></div></div>
-        <div class="card runner"><div class="dot" style="background:#f5f0e0;--g:rgba(255,224,102,.6)"></div><div><h3>Zenith</h3><small>Has already stood where the sky ends. · <span class="pill">1,500 stars</span></small></div></div>
+  <section id="crew" style="background:linear-gradient(180deg,#5a3478,#c4566b 70%,#f29b55)">
+    <div class="wrap center">
+      <span class="kicker" style="color:#ffe08a">The crew</span>
+      <h2 style="color:#fff">Six builders, one free, five to hire.</h2>
+      <p class="lead" style="color:#fff;font-weight:700">Every builder plays the same. Each paints the tower in their own palette and rides along on every block you drop.</p>
+      <div class="crew reveal">
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-sparrow.png" alt="Sparrow"></div><h3>Sparrow</h3><small>Small, quick and never afraid of heights.</small><span class="price free">Free</span></div>
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-kite.png" alt="Kite"></div><h3>Kite</h3><small>Rides every gust like it was invited.</small><span class="price"><img src="assets/art/coin-star.png" alt="">150</span></div>
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-heron.png" alt="Heron"></div><h3>Heron</h3><small>Patient hands, perfectly level blocks.</small><span class="price"><img src="assets/art/coin-star.png" alt="">350</span></div>
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-aurora.png" alt="Aurora"></div><h3>Aurora</h3><small>Builds by the light of the northern sky.</small><span class="price"><img src="assets/art/coin-star.png" alt="">600</span></div>
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-comet.png" alt="Comet"></div><h3>Comet</h3><small>Leaves a trail of sparks on every floor.</small><span class="price"><img src="assets/art/coin-star.png" alt="">900</span></div>
+        <div class="member paper"><div class="pic"><img class="cloud-base" src="assets/art/podium-cloud.png" alt=""><img class="who" src="assets/art/builder-zenith.png" alt="Zenith"></div><h3>Zenith</h3><small>Has already stood where the sky ends.</small><span class="price"><img src="assets/art/coin-star.png" alt="">1,500</span></div>
       </div>
     </div>
   </section>
 
-  <section id="screens" class="tight">
+  <section id="screens" style="background:#fff">
     <div class="wrap">
-      <span class="eyebrow">See it in action</span>
-      <h2 class="section-title">Straight from the game.</h2>
+      <span class="kicker">See it in action</span>
+      <h2>Straight from the game.</h2>
       <p class="lead">Real captures from Sky Stack on iPhone.</p>
-      <div class="gallery reveal" style="margin-top:24px">
-        <figure class="shot"><img src="assets/screens/home.png" alt="Base screen with the current builder, the build button and shortcuts to Workshop, Builders, Records and How to play"><figcaption>Your base: builder, stars, workshop</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/ready.png" alt="Pre-build card with the chosen builder, base width, perfect zone and lean limit"><figcaption>Check your loadout before you climb</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/run-wind.png" alt="Gameplay: a gust banner warning which way the wind will push the block"><figcaption>A gust is coming: drop against it</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/run-cloud.png" alt="Gameplay: a cloud drifting beside the top of the tower"><figcaption>Catch the cloud to anchor the tower</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/run-storm.png" alt="Gameplay: storm band with rain, darker sky and the stars x2 banner"><figcaption>Storm floors pay double</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/gameover.png" alt="Results card with a new best score, height, stars earned and perfect drops"><figcaption>New best, stars banked</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/workshop.png" alt="Workshop listing five upgrades with levels, effects and prices"><figcaption>Five permanent upgrades</figcaption></figure>
-        <figure class="shot"><img src="assets/screens/builders.png" alt="Builders gallery with unlocked and locked builders and their block palettes"><figcaption>Unlock builders and their colours</figcaption></figure>
+      <div class="gallery reveal">
+        <figure class="shot paper"><img src="assets/screens/skyline.png" alt="Skyline screen: your record tower on a painted sky, the next height goal and the dock"><figcaption>Your skyline grows with your record</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/ready.png" alt="Shift briefing sheet with the builder, loadout and start button"><figcaption>Shift briefing before every build</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/run-cloud.png" alt="Gameplay with a glowing anchor cloud near the top of the tower"><figcaption>Drop under the cloud to anchor</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/gameover.png" alt="Inspection report with floors, stars, perfect drops and a new record stamp"><figcaption>Every build gets an inspection report</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/workshop.png" alt="Workshop blueprints with upgrade illustrations and star prices"><figcaption>Blueprints in the workshop</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/crew.png" alt="Crew carousel with Kite standing on a cloud"><figcaption>Swipe through the crew</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/logbook.png" alt="Logbook with floor record, a chart of recent towers and stamps"><figcaption>Logbook, chart and stamps</figcaption></figure>
+        <figure class="shot paper"><img src="assets/screens/guide.png" alt="Illustrated how-to-play guide page"><figcaption>An illustrated guide to every rule</figcaption></figure>
       </div>
     </div>
   </section>
 
-  <section id="devices">
+  <section id="devices" class="sky" style="padding:70px 0">
     <div class="wrap">
-      <span class="eyebrow">Platforms</span>
-      <h2 class="section-title">Built for iPhone and iPad.</h2>
-      <p class="lead">Sky Stack runs fully offline. There is no account, no login and no connection required. Your progress is stored on your device only.</p>
-      <div class="platforms" style="margin-top:18px">
-        <span class="pill">📱 iPhone</span><span class="pill">📲 iPad, every orientation</span><span class="pill">⚙️ iOS 18 or later</span><span class="pill">✈️ Fully offline</span><span class="pill">🤲 Haptic feedback</span><span class="pill">🚫 No ads, no tracking</span>
-      </div>
+      <span class="kicker" style="color:#fff">Platforms</span>
+      <h2 style="color:#fff;text-shadow:0 3px 0 rgba(27,35,64,.25)">Built for iPhone and iPad.</h2>
+      <p class="lead" style="color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(27,35,64,.35)">No account, no login, no connection required. Your towers, stars and builders are stored on your device only.</p>
+      <div class="chips"><span>📱 iPhone</span><span>📲 iPad, every orientation</span><span>⚙️ iOS 18 or later</span><span>✈️ Fully offline</span><span>🤲 Haptic feedback</span><span>🚫 No ads, no tracking</span></div>
     </div>
   </section>
 
-  <section id="support" class="tight">
-    <div class="wrap grid-2">
+  <section id="support" style="background:#fff">
+    <div class="wrap support">
       <div>
-        <span class="eyebrow">We're here to help</span>
-        <h2 class="section-title">Support</h2>
-        <h3>Contact us</h3>
-        <p class="lead">Something not working, or an idea for a new kind of weather? Email us and we will get back to you as soon as we can:</p>
-        <a class="email" href="mailto:support@skystack.space">support@skystack.space</a>
+        <span class="kicker">We're here to help</span>
+        <h2>Support</h2>
+        <p class="lead">Stuck on a storm, found a bug, or have an idea for new weather? Write to us and we will get back to you as soon as we can.</p>
+        <a class="mail" href="mailto:support@skystack.space">support@skystack.space</a>
+        <img src="assets/art/lantern.png" alt="" style="width:90px;margin-top:24px">
       </div>
-      <div class="faq">
-        <h3>Frequently asked questions</h3>
+      <div class="faq paper" style="box-shadow:0 0 0 2px var(--paper-shade)">
         <details open><summary>Do I need an internet connection to play?</summary><p>No. Sky Stack is fully offline. Upgrades, builders and records live on your device.</p></details>
         <details><summary>Can I buy stars?</summary><p>No. There are no in-app purchases. Every star is earned by building.</p></details>
-        <details><summary>My tower keeps toppling even though the blocks are wide.</summary><p>That is the lean. Off-centre drops add up even when nothing gets trimmed much. Land perfects or anchor to a cloud to straighten it, and buy Ballast in the Workshop to raise the limit.</p></details>
-        <details><summary>The wind makes me miss.</summary><p>Watch the banner: it tells you the gust direction before it starts. Drop a little early on the side the wind is coming from, or upgrade Windbreak.</p></details>
-        <details><summary>I switched phones. Where is my progress?</summary><p>Progress is stored locally on the device. Restore the device from an iCloud or computer backup to bring it along.</p></details>
+        <details><summary>My tower topples even though the blocks are wide.</summary><p>That is the lean. Off-centre drops add up even when little gets trimmed. Land perfects or anchor to a cloud to level it, and buy Ballast to raise the limit.</p></details>
+        <details><summary>The wind makes me miss.</summary><p>Watch the windsock: it turns before the gust starts. Drop a little early on the side the wind is coming from, or build the Windbreak plan.</p></details>
+        <details><summary>I switched phones. Where is my progress?</summary><p>Progress is stored locally. Restore the new device from an iCloud or computer backup to bring it along.</p></details>
         <details><summary>Something crashed or looks wrong.</summary><p>Write to <a href="mailto:support@skystack.space">support@skystack.space</a> with your device model and iOS version, or use <a href="https://reportaproblem.apple.com" rel="noopener">reportaproblem.apple.com</a>.</p></details>
       </div>
     </div>
   </section>
 
-  <section id="privacy" class="legal">
+  <section class="legal">
     <div class="wrap">
-      <span class="eyebrow">Legal</span>
-      <h2 class="section-title">Privacy Policy</h2>
-      <p class="updated">Last updated: October 20, 2026</p>
-      <h3>Overview</h3>
-      <p>Sky Stack ("the App", "we", "us") is a stacking game for iPhone and iPad. This policy explains what information the App handles and how. The short version: the App works entirely on your device and does not collect, transmit or sell personal data.</p>
-      <h3>Information we receive</h3>
-      <p>The App does not require an account and does not ask for your name, email, location, contacts, photos or any other personal information. It does not contain advertising or third-party analytics and makes no network requests of its own.</p>
-      <h3>Data stored on your device</h3>
-      <p>Game progress (stars, upgrade levels, unlocked builders, best scores and heights, build history and achievements) and your preferences (control scheme, haptics) are stored locally on your device using Apple's on-device storage. This data never leaves your device unless you include it in a device backup you control.</p>
-      <h3>Apple services</h3>
-      <p>If you download the App from the App Store, Apple may collect information such as crash reports or usage statistics according to your device settings and Apple's privacy policy. We receive only aggregated, anonymised reports that Apple makes available to developers.</p>
-      <h3>Your choices</h3>
-      <p>You can erase all game data at any time from Settings inside the App ("Reset progress") or by deleting the App. Haptic feedback can be switched off in the same Settings screen.</p>
-      <h3>Children's privacy</h3>
-      <p>The App is suitable for all ages and does not knowingly collect any information from anyone, including children under 13.</p>
-      <h3>Changes</h3>
-      <p>If this policy changes, the updated version will be published on this page with a new "Last updated" date.</p>
-      <h3>Contact</h3>
-      <p>Questions about privacy: <a href="mailto:support@skystack.space">support@skystack.space</a>.</p>
-    </div>
-  </section>
-
-  <section id="terms" class="legal" style="border-top:0">
-    <div class="wrap">
-      <span class="eyebrow">Legal</span>
-      <h2 class="section-title">Terms of Use</h2>
-      <p class="updated">Last updated: October 20, 2026</p>
-      <h3>Acceptance</h3>
-      <p>By downloading or playing Sky Stack ("the App"), you agree to these Terms of Use. If you do not agree, please do not use the App.</p>
-      <h3>License</h3>
-      <p>We grant you a personal, non-transferable, non-exclusive, revocable licence to install and play the App on Apple devices that you own or control, as permitted by the App Store Terms of Service. You may not copy, modify, reverse engineer, distribute or create derivative works from the App except where the law expressly allows it.</p>
-      <h3>Virtual currency</h3>
-      <p>Stars, builders and upgrades are virtual items earned solely by playing. They have no monetary value, cannot be purchased, sold, transferred or exchanged for real money, and may be reset by you at any time from Settings.</p>
-      <h3>Acceptable use</h3>
-      <p>Do not use the App in any way that violates applicable law, interferes with its operation, or attempts to extract its source code or assets.</p>
-      <h3>Disclaimer &amp; limitation of liability</h3>
-      <p>The App is provided "as is" without warranties of any kind. To the fullest extent permitted by law, we are not liable for any indirect, incidental or consequential damages arising from your use of, or inability to use, the App. Our total liability for any claim relating to the App will not exceed the amount you paid for it, which is zero.</p>
-      <h3>Changes</h3>
-      <p>We may update the App and these Terms from time to time. Continued use of the App after an update means you accept the revised Terms.</p>
-      <h3>Contact</h3>
-      <p>Questions about these Terms: <a href="mailto:support@skystack.space">support@skystack.space</a>.</p>
+      <div id="privacy" class="report paper">
+        <div class="head"><span>PRIVACY POLICY</span><span>LAST UPDATED 20 OCT 2026</span></div>
+        <div class="body">
+          <h3>Overview</h3>
+          <p>Sky Stack ("the App", "we", "us") is a stacking game for iPhone and iPad. This policy explains what information the App handles and how. The short version: the App works entirely on your device and does not collect, transmit or sell personal data.</p>
+          <h3>Information we receive</h3>
+          <p>The App does not require an account and does not ask for your name, email, location, contacts, photos or any other personal information. It contains no advertising or third-party analytics and makes no network requests of its own.</p>
+          <h3>Data stored on your device</h3>
+          <p>Game progress (stars, upgrade levels, hired builders, best scores and heights, build history and achievements) and your preferences (control scheme, haptics) are stored locally using Apple's on-device storage. This data never leaves your device unless you include it in a backup you control.</p>
+          <h3>Apple services</h3>
+          <p>If you download the App from the App Store, Apple may collect information such as crash reports or usage statistics according to your device settings and Apple's privacy policy. We receive only aggregated, anonymised reports that Apple makes available to developers.</p>
+          <h3>Your choices</h3>
+          <p>You can erase all game data at any time from Settings inside the App ("Reset") or by deleting the App. Haptic feedback can be switched off in the same Settings sheet.</p>
+          <h3>Children's privacy</h3>
+          <p>The App is suitable for all ages and does not knowingly collect any information from anyone, including children under 13.</p>
+          <h3>Changes and contact</h3>
+          <p>If this policy changes, the updated version will be published on this page with a new date. Questions: <a href="mailto:support@skystack.space">support@skystack.space</a>.</p>
+        </div>
+      </div>
+      <div id="terms" class="report paper">
+        <div class="head"><span>TERMS OF USE</span><span>LAST UPDATED 20 OCT 2026</span></div>
+        <div class="body">
+          <h3>Acceptance</h3>
+          <p>By downloading or playing Sky Stack ("the App"), you agree to these Terms of Use. If you do not agree, please do not use the App.</p>
+          <h3>License</h3>
+          <p>We grant you a personal, non-transferable, non-exclusive, revocable licence to install and play the App on Apple devices that you own or control, as permitted by the App Store Terms of Service. You may not copy, modify, reverse engineer, distribute or create derivative works from the App except where the law expressly allows it.</p>
+          <h3>Virtual items</h3>
+          <p>Stars, builders and upgrades are virtual items earned solely by playing. They have no monetary value, cannot be purchased, sold, transferred or exchanged for real money, and may be reset by you at any time from Settings.</p>
+          <h3>Acceptable use</h3>
+          <p>Do not use the App in any way that violates applicable law, interferes with its operation, or attempts to extract its source code or artwork.</p>
+          <h3>Disclaimer and limitation of liability</h3>
+          <p>The App is provided "as is" without warranties of any kind. To the fullest extent permitted by law, we are not liable for any indirect, incidental or consequential damages arising from your use of, or inability to use, the App. Our total liability for any claim relating to the App will not exceed the amount you paid for it, which is zero.</p>
+          <h3>Changes and contact</h3>
+          <p>We may update the App and these Terms from time to time. Continued use after an update means you accept the revised Terms. Questions: <a href="mailto:support@skystack.space">support@skystack.space</a>.</p>
+        </div>
+      </div>
     </div>
   </section>
 </main>
@@ -340,10 +363,10 @@
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="logo" href="#"><img src="assets/icon-512.png" alt="">Sky Stack</a>
+        <img src="assets/art/logo-wordmark.png" alt="Sky Stack" style="height:40px;width:auto">
         <p style="margin-top:12px;max-width:34ch">A one-tap tower stacking game for iPhone and iPad. Build above the clouds.</p>
       </div>
-      <div><h4>Game</h4><ul><li><a href="#mechanics">Mechanics</a></li><li><a href="#builders">Builders</a></li><li><a href="#screens">Screenshots</a></li><li><a href="#devices">Platforms</a></li></ul></div>
+      <div><h4>Game</h4><ul><li><a href="#mechanics">Mechanics</a></li><li><a href="#workshop">Workshop</a></li><li><a href="#crew">Crew</a></li><li><a href="#screens">Screenshots</a></li></ul></div>
       <div><h4>Store</h4><ul><li><span>App Store (coming soon)</span></li></ul></div>
       <div><h4>Legal</h4><ul><li><a href="#privacy">Privacy Policy</a></li><li><a href="#terms">Terms of Use</a></li><li><a href="#support">Support</a></li></ul></div>
     </div>
@@ -352,7 +375,8 @@
 </footer>
 
 <script>
-  // Fade sections in as they scroll into view.
+  // Fade sections in as they scroll into view (content stays visible without JavaScript).
+  document.documentElement.classList.add('js');
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
   }, { threshold: 0.12 });

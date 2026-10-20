@@ -26,21 +26,21 @@ struct StartupErrorView: View {
 
     var body: some View {
         ZStack {
-            SkyBackdrop()
+            SkyScenery(kind: .dusk)
             VStack(spacing: 16) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 44))
-                    .foregroundStyle(Theme.Colors.star)
+                    .foregroundStyle(Theme.Colors.sun)
                 Text("The sky is out of reach")
                     .font(.display(24))
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .foregroundStyle(Color.white)
                 Text("Sky Stack could not open its save data. Please restart the app. If the problem persists, reinstalling will create a fresh save.")
                     .font(.system(size: 15, design: .rounded))
-                    .foregroundStyle(Theme.Colors.textSecondary)
+                    .foregroundStyle(Color.white.opacity(0.85))
                     .multilineTextAlignment(.center)
                 Text(message)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(Theme.Colors.textTertiary)
+                    .foregroundStyle(Color.white.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
             .padding(32)

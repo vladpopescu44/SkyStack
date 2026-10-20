@@ -34,7 +34,6 @@ final class TowerScene: SKScene {
 
     private var sky: SceneryBuilder.Sky?
     private var cloudLayer: SceneryBuilder.CloudLayer?
-    private var starsEmitter: SKEmitterNode?
     private var rain: SKEmitterNode?
     private var windStreaks: SKEmitterNode?
     private var flash: SKSpriteNode?
@@ -99,7 +98,7 @@ final class TowerScene: SKScene {
 
     private func rebuildScenery(for newSize: CGSize) {
         lastSize = newSize
-        [sky?.container, cloudLayer?.container, starsEmitter, rain, windStreaks, flash].forEach { $0?.removeFromParent() }
+        [sky?.container, cloudLayer?.container, rain, windStreaks, flash].forEach { $0?.removeFromParent() }
 
         let sky = SceneryBuilder.Sky(size: newSize)
         cameraNode.addChild(sky.container)
@@ -108,10 +107,6 @@ final class TowerScene: SKScene {
         let clouds = SceneryBuilder.CloudLayer(size: newSize, count: 9)
         cameraNode.addChild(clouds.container)
         cloudLayer = clouds
-
-        let stars = SceneryBuilder.makeStars(size: newSize)
-        cameraNode.addChild(stars)
-        starsEmitter = stars
 
         let rain = SceneryBuilder.makeRain(size: newSize)
         cameraNode.addChild(rain)
@@ -145,11 +140,11 @@ final class TowerScene: SKScene {
         let width = CGFloat(session.baseWidth)
         let center = CGPoint(x: CGFloat(session.playfieldWidth) / 2, y: BlockNode.height / 2)
 
-        let pillar = SceneryBuilder.makePillar(width: width * 0.86, color: loadout.skin.secondary)
+        let pillar = SceneryBuilder.makePillar(width: width * 0.86)
         tower.addChild(pillar)
         self.pillar = pillar
 
-        let base = BlockNode(width: width, color: loadout.skin.secondary, textureKey: "\(loadout.skin.rawValue)-base")
+        let base = BlockNode(width: width, textureName: "block-base", seed: 0)
         base.worldCenter = center
         tower.addChild(base)
         blocks.append(base)
@@ -243,7 +238,7 @@ final class TowerScene: SKScene {
         let dt = min(max(currentTime - last, 0), 1.0 / 20.0)
         guard dt > 0, !isSuspended else { return }
 
-        cloudLayer?.update(dt: dt, cameraY: cameraY)
+        cloudLayer?.update(dt: dt, cameraY: cameraY, dimmed: session.isStorm)
         guard isRunning, !session.isOver else { return }
 
         let tick = session.advance(by: dt)
@@ -297,9 +292,7 @@ final class TowerScene: SKScene {
     }
 
     private func updateAltitudeVisuals() {
-        let altitude = min(1, CGFloat(session.floor) / 70)
-        sky?.setAltitude(altitude)
-        starsEmitter?.particleBirthRate = 30 * altitude
+        sky?.setFloor(session.floor)
     }
 
     private func updateLean(dt: TimeInterval) {
@@ -314,19 +307,34 @@ final class TowerScene: SKScene {
     private func syncCloud() {
         if let cloud = session.cloud {
             if cloudNode == nil {
-                let node = SKSpriteNode(texture: TextureFactory.cloud())
-                node.size = CGSize(width: CGFloat(cloud.width) * 1.2, height: CGFloat(cloud.width) * 0.55)
+                let node = SKSpriteNode(texture: TextureFactory.art("cloud-b"))
+                node.size = CGSize(width: CGFloat(cloud.width) * 1.3, height: CGFloat(cloud.width) * 0.64)
                 node.alpha = 0
                 node.zPosition = SceneLayer.cloudAnchor
+                // A warm halo and a bobbing marker set the anchor cloud apart from scenery clouds.
+                let halo = SKSpriteNode(texture: TextureFactory.softCircle(diameter: 64))
+                halo.size = CGSize(width: node.size.width * 1.5, height: node.size.height * 1.9)
+                halo.color = UIColor(red: 1.0, green: 0.86, blue: 0.45, alpha: 1)
+                halo.colorBlendFactor = 1
+                halo.blendMode = .add
+                halo.alpha = 0.55
+                halo.zPosition = -1
+                node.addChild(halo)
+                let marker = SKSpriteNode(texture: TextureFactory.art("coin-star"))
+                marker.size = CGSize(width: 18, height: 18)
+                marker.position = CGPoint(x: 0, y: node.size.height * 0.62)
+                marker.zPosition = 1
+                marker.run(.repeatForever(.sequence([.moveBy(x: 0, y: 6, duration: 0.45), .moveBy(x: 0, y: -6, duration: 0.45)])))
+                node.addChild(marker)
                 node.run(.fadeAlpha(to: 0.92, duration: 0.4))
-                let bob = SKAction.sequence([.moveBy(x: 0, y: 4, duration: 0.9), .moveBy(x: 0, y: -4, duration: 0.9)])
-                bob.timingMode = .easeInEaseOut
-                node.run(.repeatForever(bob))
+                let breathe = SKAction.sequence([.scale(to: 1.04, duration: 0.9), .scale(to: 0.97, duration: 0.9)])
+                breathe.timingMode = .easeInEaseOut
+                node.run(.repeatForever(breathe))
                 world.addChild(node)
                 cloudNode = node
             }
             cloudNode?.position.x = CGFloat(cloud.centerX)
-            cloudNode?.position.y = movingY - 2 + (cloudNode?.position.y ?? 0).truncatingRemainder(dividingBy: 1)
+            cloudNode?.position.y = movingY - 4
         } else if let node = cloudNode {
             cloudNode = nil
             node.removeAllActions()
@@ -385,12 +393,7 @@ final class TowerScene: SKScene {
     private func spawnMovingBlock() {
         let width = CGFloat(session.topWidth)
         let floorIndex = session.currentFloor
-        let paletteIndex = floorIndex % loadout.skin.blockPalette.count
-        let block = BlockNode(
-            width: width,
-            color: loadout.skin.blockColor(forFloor: floorIndex),
-            textureKey: "\(loadout.skin.rawValue)-\(paletteIndex)"
-        )
+        let block = BlockNode(width: width, textureName: loadout.skin.blockAsset(forFloor: floorIndex), seed: floorIndex)
         let fromLeft = floorIndex % 2 == 1
         movingDirection = fromLeft ? 1 : -1
         block.position = CGPoint(x: fromLeft ? minMovingX(for: width) : maxMovingX(for: width), y: movingY)
@@ -456,7 +459,7 @@ final class TowerScene: SKScene {
 
         // The piece that broke off.
         if result.trimmedWidth > 0.5, let side = result.trimmedSide {
-            let piece = BlockNode(width: CGFloat(result.trimmedWidth), color: block.color, textureKey: "\(loadout.skin.rawValue)-\(result.floor % loadout.skin.blockPalette.count)")
+            let piece = BlockNode(width: CGFloat(result.trimmedWidth), textureName: block.textureName, seed: result.floor &+ 101)
             let offset = CGFloat(side.sign) * (keptWidth / 2 + CGFloat(result.trimmedWidth) / 2)
             piece.position = CGPoint(x: keptCenter.x + offset, y: rowY)
             world.addChild(piece)
@@ -473,7 +476,7 @@ final class TowerScene: SKScene {
         if result.isAnchored {
             block.setWidth(CGFloat(result.width), animated: true)
             block.playAnchor()
-            floatLabel("ANCHORED", at: CGPoint(x: keptCenter.x, y: keptCenter.y + 26), color: .white)
+            floatLabel("ANCHORED", at: CGPoint(x: keptCenter.x, y: keptCenter.y + 26), color: UIColor(red: 0.11, green: 0.14, blue: 0.25, alpha: 1))
             gameDelegate?.scene(self, didRegister: .anchored)
         }
         if result.lanternLit {

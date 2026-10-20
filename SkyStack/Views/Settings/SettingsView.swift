@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Preferences, progress reset and app information.
+/// Preferences, progress reset and app information, presented as a paper sheet.
 struct SettingsView: View {
     @State private var viewModel: SettingsViewModel
+    let onClose: () -> Void
 
-    init(viewModel: SettingsViewModel) {
+    init(viewModel: SettingsViewModel, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
+        self.onClose = onClose
     }
 
     var body: some View {
@@ -13,79 +15,79 @@ struct SettingsView: View {
         @Bindable var settings = viewModel.settings
         ScrollView {
             VStack(spacing: 16) {
-                settingsGroup(title: "Gameplay") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Controls", systemImage: settings.controlScheme.systemImage)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                        Picker("Controls", selection: $settings.controlScheme) {
-                            ForEach(ControlScheme.allCases) { scheme in
-                                Text(scheme.title).tag(scheme)
+                HStack {
+                    Text("Settings")
+                        .font(.display(28, weight: .black))
+                        .foregroundStyle(Theme.Colors.ink)
+                    Spacer()
+                    Button(action: onClose) { Image(systemName: "xmark") }
+                        .buttonStyle(PaperIconButtonStyle(size: 40))
+                        .accessibilityLabel("Close")
+                        .accessibilityIdentifier(AccessibilityID.Settings.closeButton)
+                }
+                .padding(.top, 18)
+
+                group(title: "How you drop blocks") {
+                    HStack(spacing: 12) {
+                        ForEach(ControlScheme.allCases) { scheme in
+                            controlOption(scheme, isSelected: settings.controlScheme == scheme) {
+                                settings.controlScheme = scheme
                             }
                         }
-                        .pickerStyle(.segmented)
-                        .accessibilityIdentifier(AccessibilityID.Settings.controlPicker)
-                        Text(settings.controlScheme == .tap
-                             ? "Tap anywhere on the playfield to drop the block."
-                             : "A large drop button sits at the bottom of the screen.")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.Colors.textSecondary)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(AccessibilityID.Settings.controlPicker)
+                }
 
-                    Divider().overlay(Theme.Colors.stroke)
-
+                group(title: "Feel") {
                     Toggle(isOn: $settings.hapticsEnabled) {
-                        Label("Haptic feedback", systemImage: "iphone.radiowaves.left.and.right")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Theme.Colors.textPrimary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Haptic feedback")
+                                .font(.display(16, weight: .bold))
+                                .foregroundStyle(Theme.Colors.ink)
+                            Text("A tap on every landing, a thud when the tower falls.")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(Theme.Colors.inkSoft)
+                        }
                     }
-                    .tint(Theme.Colors.sky)
+                    .tint(Theme.Colors.leaf)
                     .onChange(of: settings.hapticsEnabled) { _, _ in viewModel.hapticsChanged() }
                     .accessibilityIdentifier(AccessibilityID.Settings.hapticsToggle)
                 }
 
-                settingsGroup(title: "Progress") {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Reset progress")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Theme.Colors.textPrimary)
-                            Text("Removes stars, upgrades, builders and build history.")
+                group(title: "Progress") {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Demolish and start over")
+                                .font(.display(16, weight: .bold))
+                                .foregroundStyle(Theme.Colors.ink)
+                            Text("Removes stars, upgrades, builders and the logbook.")
                                 .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(Theme.Colors.textSecondary)
+                                .foregroundStyle(Theme.Colors.inkSoft)
                         }
                         Spacer()
-                        Button("Reset", role: .destructive, action: viewModel.requestReset)
-                            .font(.display(14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.vertical, 9)
-                            .padding(.horizontal, 14)
-                            .background(Capsule().fill(Theme.Colors.danger.opacity(0.85)))
+                        Button("Reset", action: viewModel.requestReset)
+                            .buttonStyle(BlockButtonStyle(color: Theme.Colors.coral, compact: true))
                             .accessibilityIdentifier(AccessibilityID.Settings.resetButton)
                     }
                 }
 
-                settingsGroup(title: "About") {
-                    aboutRow(title: "Version", value: viewModel.appVersion)
-                    Divider().overlay(Theme.Colors.stroke)
-                    aboutRow(title: "Made with", value: "SwiftUI + SpriteKit")
-                    Divider().overlay(Theme.Colors.stroke)
-                    Text("Sky Stack stores your progress only on this device. No account, no tracking, no network.")
+                group(title: "About") {
+                    aboutRow("Version", viewModel.appVersion)
+                    aboutRow("Support", "support@skystack.space")
+                    Text("Sky Stack keeps your progress only on this device. No account, no tracking, no network.")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .foregroundStyle(Theme.Colors.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: Theme.Metrics.maxContentWidth)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, Theme.Metrics.screenPadding)
-            .padding(.bottom, 32)
+            .padding(.bottom, 30)
         }
         .scrollIndicators(.hidden)
-        .background(SkyBackdrop(cloudCount: 4))
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .background(Theme.Colors.paperShade.ignoresSafeArea())
         .toast(message: $viewModel.toastMessage, isError: viewModel.toastIsError)
         .confirmationDialog(
             "Reset all progress?",
@@ -95,34 +97,63 @@ struct SettingsView: View {
             Button("Reset everything", role: .destructive, action: viewModel.confirmReset)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This cannot be undone. Your stars, upgrades, unlocked builders and records will be erased.")
+            Text("This cannot be undone. Your stars, upgrades, hired builders and logbook will be erased.")
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.Settings.screen)
     }
 
-    private func settingsGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.Colors.textTertiary)
-                .textCase(.uppercase)
-            content()
+    private func controlOption(_ scheme: ControlScheme, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: scheme.systemImage)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(isSelected ? Theme.Colors.sky : Theme.Colors.inkFaint)
+                    .frame(height: 32)
+                Text(scheme.title)
+                    .font(.display(14, weight: .bold))
+                    .foregroundStyle(Theme.Colors.ink)
+                Text(scheme == .tap ? "Tap anywhere on the sky" : "Big button under the tower")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(Theme.Colors.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2, reservesSpace: true)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 120, alignment: .top)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Theme.Colors.sky.opacity(0.1) : Theme.Colors.paperShade)
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(isSelected ? Theme.Colors.sky : .clear, lineWidth: 2))
+            )
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardBackground()
+        .buttonStyle(.plain)
+        .accessibilityLabel(scheme.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func aboutRow(title: String, value: String) -> some View {
+    private func group<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .tracking(1.2)
+                .foregroundStyle(Theme.Colors.inkFaint)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .paperPanel(cornerRadius: 20)
+    }
+
+    private func aboutRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(Theme.Colors.textPrimary)
+                .foregroundStyle(Theme.Colors.ink)
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(Theme.Colors.textSecondary)
+                .foregroundStyle(Theme.Colors.inkSoft)
         }
     }
 }

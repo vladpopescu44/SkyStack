@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shows a transient message banner at the bottom of the screen.
+/// Shows a transient paper note at the bottom of the screen, above the dock.
 struct ToastModifier: ViewModifier {
     @Binding var message: String?
     var isError = false
@@ -11,21 +11,20 @@ struct ToastModifier: ViewModifier {
                 if let message {
                     HStack(spacing: 10) {
                         Image(systemName: isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                            .foregroundStyle(isError ? Theme.Colors.danger : Theme.Colors.success)
+                            .foregroundStyle(isError ? Theme.Colors.coral : Theme.Colors.leaf)
                         Text(message)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Theme.Colors.textPrimary)
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.Colors.ink)
                             .multilineTextAlignment(.leading)
                     }
                     .padding(.vertical, 12)
                     .padding(.horizontal, 16)
                     .background {
                         Capsule()
-                            .fill(Theme.Colors.surfaceElevated)
-                            .overlay(Capsule().strokeBorder(Theme.Colors.stroke, lineWidth: 1))
-                            .shadow(color: .black.opacity(0.4), radius: 14, y: 6)
+                            .fill(.white)
+                            .shadow(color: Theme.Colors.ink.opacity(0.25), radius: 12, y: 5)
                     }
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 14)
                     .padding(.horizontal, 20)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .accessibilityElement(children: .combine)

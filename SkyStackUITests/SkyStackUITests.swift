@@ -2,6 +2,15 @@ import XCTest
 
 /// End-to-end flows through the real interface.
 /// The app launches with `--uitesting`, which uses an in-memory save and seeds 1,000 stars.
+private extension XCUIElement {
+    /// Waits until the element can be tapped (pages in a carousel animate into place).
+    func waitForHittable(timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "isHittable == true")
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
+}
+
 final class SkyStackUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -28,7 +37,7 @@ final class SkyStackUITests: XCTestCase {
 
     /// Waits until the "Starting in N" overlay has disappeared, i.e. the build is live.
     private func waitForCountdownToFinish(file: StaticString = #filePath, line: UInt = #line) {
-        let countdown = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Starting in")).firstMatch
+        let countdown = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Starting in")).firstMatch
         XCTAssertTrue(countdown.waitForExistence(timeout: 5), "Countdown never started", file: file, line: line)
         XCTAssertTrue(countdown.waitForNonExistence(timeout: 8), "Countdown never finished", file: file, line: line)
         // Let the HUD fade-in complete before interacting.
@@ -42,11 +51,9 @@ final class SkyStackUITests: XCTestCase {
         pause.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
-    private func goBack() {
-        let back = app.navigationBars.buttons.element(boundBy: 0)
-        if back.waitForExistence(timeout: 3) {
-            back.tap()
-        }
+    /// Returns to the skyline through the dock.
+    private func goHome() {
+        element("tab.skyline").tap()
     }
 
     // MARK: - Home
@@ -71,23 +78,29 @@ final class SkyStackUITests: XCTestCase {
 
         element("home.workshop").tap()
         waitFor("workshop.screen")
-        goBack()
+        goHome()
         waitFor("home.screen")
 
         element("home.builders").tap()
         waitFor("builders.screen")
-        goBack()
+        goHome()
         waitFor("home.screen")
 
         element("home.records").tap()
         waitFor("records.screen")
         XCTAssertTrue(element("records.empty").waitForExistence(timeout: 3))
-        goBack()
+        goHome()
         waitFor("home.screen")
 
         element("home.howToPlay").tap()
         waitFor("howToPlay.screen")
-        goBack()
+        // Page through the illustrated guide to the end, then finish it.
+        for _ in 0..<7 {
+            let next = element("howToPlay.next")
+            XCTAssertTrue(next.waitForExistence(timeout: 3))
+            next.tap()
+        }
+        element("howToPlay.continue").tap()
         waitFor("home.screen")
 
         element("home.settings").tap()
@@ -95,7 +108,7 @@ final class SkyStackUITests: XCTestCase {
         XCTAssertTrue(element("settings.haptics").exists)
         XCTAssertTrue(element("settings.controls").exists)
         XCTAssertTrue(element("settings.reset").exists)
-        goBack()
+        element("settings.close").tap()
         waitFor("home.screen")
     }
 
@@ -143,8 +156,11 @@ final class SkyStackUITests: XCTestCase {
         element("home.builders").tap()
         waitFor("builders.screen")
 
+        // Jump to Kite with the roster, then hire them from their page.
+        element("builders.thumb.kite").tap()
         let unlock = element("builders.action.kite")
         XCTAssertTrue(unlock.waitForExistence(timeout: 3))
+        _ = unlock.waitForHittable(timeout: 3)
         unlock.tap()
 
         XCTAssertTrue(app.staticTexts["Kite unlocked and equipped."].waitForExistence(timeout: 3))
@@ -226,6 +242,45 @@ final class SkyStackUITests: XCTestCase {
         XCTAssertTrue(grew || finished, "Tapping the playfield did not drop a block")
     }
 
+    /// The settings sheet opens from the skyline and closes back to it.
+    @MainActor
+    func testSettingsSheetChangesControls() {
+        waitFor("home.screen")
+        element("home.settings").tap()
+        waitFor("settings.screen")
+        app.buttons["Drop button"].tap()
+        element("settings.close").tap()
+        waitFor("home.screen")
+
+        element("home.play").tap()
+        waitFor("game.screen")
+        element("game.start").tap()
+        waitForCountdownToFinish()
+        XCTAssertTrue(element("game.drop").waitForExistence(timeout: 3), "Drop button scheme was not applied")
+        element("game.drop").tap()
+        tapPause(element("game.pause"))
+        waitFor("game.pausedOverlay")
+        element("game.quit").tap()
+        waitFor("home.screen")
+    }
+
+    /// Without touches the tower must not grow: blocks only drop on a tap or the DROP button.
+    @MainActor
+    func testBlocksNeverDropWithoutInput() {
+        waitFor("home.screen")
+        element("home.play").tap()
+        waitFor("game.screen")
+        element("game.start").tap()
+        waitForCountdownToFinish()
+        sleep(6)
+        XCTAssertEqual(element("game.height").label, "0", "A block dropped without any input")
+        XCTAssertFalse(element("game.gameOverOverlay").exists)
+        tapPause(element("game.pause"))
+        waitFor("game.pausedOverlay")
+        element("game.quit").tap()
+        waitFor("home.screen")
+    }
+
     // MARK: - iPad
 
     /// iPad supports every orientation, so the base and the game must stay usable in landscape.
@@ -236,15 +291,22 @@ final class SkyStackUITests: XCTestCase {
         defer { XCUIDevice.shared.orientation = .portrait }
 
         waitFor("home.screen")
-        XCTAssertTrue(element("home.play").isHittable)
-        XCTAssertTrue(element("home.workshop").isHittable)
+        // Give the rotation animation time to settle before checking hit targets.
+        XCTAssertTrue(element("home.play").waitForHittable(timeout: 5), "BUILD is not tappable in landscape")
+        XCTAssertTrue(element("home.workshop").waitForHittable(timeout: 3))
         attachScreenshot(named: "iPad landscape home")
 
         element("home.workshop").tap()
         waitFor("workshop.screen")
         XCTAssertTrue(element("workshop.upgrade.precision").isHittable)
         attachScreenshot(named: "iPad landscape workshop")
-        goBack()
+        element("home.builders").tap()
+        waitFor("builders.screen")
+        attachScreenshot(named: "iPad landscape crew")
+        element("home.records").tap()
+        waitFor("records.screen")
+        attachScreenshot(named: "iPad landscape logbook")
+        goHome()
         waitFor("home.screen")
 
         element("home.play").tap()

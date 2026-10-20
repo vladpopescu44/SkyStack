@@ -1,88 +1,141 @@
 import SwiftUI
 
-/// Tutorial shown before the first build and available any time from the base.
+/// A swipeable illustrated guide. Shown before the first build and from the skyline's "?" button.
 struct HowToPlayView: View {
-    let isOnboarding: Bool
-    let onContinue: (() -> Void)?
-
-    private struct Step: Identifiable {
-        let id: Int
-        let title: String
-        let detail: String
-        let systemImage: String
-        let tint: Color
+    enum Mode {
+        case onboarding
+        case reference
     }
 
-    private let steps: [Step] = [
-        Step(id: 0, title: "Drop the block", detail: "A block swings above the tower. Tap anywhere (or press the drop button) to let it fall onto the floor below.", systemImage: "hand.tap.fill", tint: Theme.Colors.sky),
-        Step(id: 1, title: "Overhang gets trimmed", detail: "Whatever sticks out past the floor below breaks off. The next block is only as wide as what stayed. Miss completely and the build is over.", systemImage: "scissors", tint: Theme.Colors.coral),
-        Step(id: 2, title: "Land perfects", detail: "Drop within the perfect zone and the block snaps into place with no trimming. Streaks of perfects multiply your score.", systemImage: "scope", tint: Theme.Colors.star),
-        Step(id: 3, title: "Read the wind", detail: "A banner warns which way the next gust will push. During a gust the block drifts and slides a little after it lands, so drop early against the wind.", systemImage: "wind", tint: Theme.Colors.cloud),
-        Step(id: 4, title: "Watch the lean", detail: "Every off-centre drop tilts the tower. The lean meter at the top shows how close it is to toppling. Perfects pull it back toward centre.", systemImage: "scalemass.fill", tint: Theme.Colors.success),
-        Step(id: 5, title: "Anchor to clouds", detail: "A cloud drifts across the tower now and then. Place a block while the cloud covers it to restore the width and reset the lean.", systemImage: "cloud.fill", tint: Theme.Colors.cloud),
-        Step(id: 6, title: "Weather the storms", detail: "From floor 10 a five-floor storm rolls in, then again every twelve floors: stronger gusts, but every floor pays double stars and score.", systemImage: "cloud.bolt.rain.fill", tint: Theme.Colors.violet),
-        Step(id: 7, title: "Light the Sky Lantern", detail: "Three perfects inside one storm light the lantern. The next three blocks centre themselves no matter the wind.", systemImage: "lightbulb.max.fill", tint: Theme.Colors.star),
-        Step(id: 8, title: "Spend stars in the workshop", detail: "Stars earned while building buy a wider base, a bigger perfect zone, windbreaks, ballast against lean and a star multiplier.", systemImage: "wrench.and.screwdriver.fill", tint: Theme.Colors.sky)
+    let mode: Mode
+    let onFinish: () -> Void
+
+    @State private var page = 0
+
+    private struct Page: Identifiable {
+        let id: Int
+        let art: String
+        let title: String
+        let detail: String
+    }
+
+    private let pages: [Page] = [
+        Page(id: 0, art: "howto-drop", title: "Drop the block", detail: "A block swings above the tower. Tap anywhere on the sky (or press the drop button) to let it fall onto the floor below."),
+        Page(id: 1, art: "howto-trim", title: "Overhang breaks off", detail: "Whatever sticks out past the floor below is trimmed away, so the next block is narrower. Miss completely and the build is over. Drop inside the perfect zone and nothing is lost."),
+        Page(id: 2, art: "howto-wind", title: "Read the wind", detail: "A windsock and a banner warn which way the next gust will push. During a gust the block drifts and slides a little after it lands, so drop early against the wind."),
+        Page(id: 3, art: "howto-lean", title: "Watch the spirit level", detail: "Every off-centre drop tilts the tower. When the bubble reaches the red end, the tower topples. Perfect drops pull it back toward the centre."),
+        Page(id: 4, art: "howto-cloud", title: "Anchor to clouds", detail: "Now and then a cloud drifts past the top of the tower. Land a block while the cloud covers it to win back width and level the tower."),
+        Page(id: 5, art: "howto-storm", title: "Weather the storms", detail: "From floor 10 a five-floor storm rolls in, then again every twelve floors. Gusts get stronger, but every storm floor pays double stars and score."),
+        Page(id: 6, art: "howto-lantern", title: "Light the Sky Lantern", detail: "Three perfect drops inside one storm light the lantern. The next three blocks guide themselves to the centre, whatever the wind is doing."),
+        Page(id: 7, art: "howto-workshop", title: "Spend stars in the workshop", detail: "Stars buy a wider base, steadier hands, windbreaks, ballast against lean and a star charm. New builders paint the tower in their own colours.")
     ]
 
+    private var isLast: Bool { page == pages.count - 1 }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                if isOnboarding {
-                    VStack(spacing: 6) {
-                        Text("Welcome to the sky")
-                            .font(.display(26))
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                        Text("Nine things to know before your first build.")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(Theme.Colors.textSecondary)
+        ZStack {
+            SkyScenery(kind: .day, cloudCount: 2)
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text(mode == .onboarding ? "Welcome aboard" : "How to play")
+                        .font(.display(26, weight: .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: Theme.Colors.ink.opacity(0.35), radius: 4, y: 2)
+                    Spacer()
+                    if mode == .reference {
+                        Button(action: onFinish) { Image(systemName: "xmark") }
+                            .buttonStyle(PaperIconButtonStyle(size: 40))
+                            .accessibilityLabel("Close")
+                            .accessibilityIdentifier(AccessibilityID.HowToPlay.closeButton)
                     }
-                    .padding(.top, 20)
                 }
 
-                ForEach(steps) { step in
-                    HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: step.systemImage)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(step.tint)
-                            .frame(width: 44, height: 44)
-                            .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(step.tint.opacity(0.15)))
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(step.title)
-                                .font(.display(16))
-                                .foregroundStyle(Theme.Colors.textPrimary)
-                            Text(step.detail)
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundStyle(Theme.Colors.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                TabView(selection: $page) {
+                    ForEach(pages) { item in
+                        pageCard(item).tag(item.id)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+
+                progressBlocks
+
+                HStack(spacing: 10) {
+                    if page > 0 {
+                        Button {
+                            withAnimation(.spring(duration: 0.35)) { page -= 1 }
+                        } label: {
+                            Image(systemName: "arrow.left")
                         }
-                        Spacer(minLength: 0)
+                        .buttonStyle(BlockButtonStyle(color: Theme.Colors.inkSoft, compact: true))
+                        .accessibilityLabel("Back")
+                        .transition(.move(edge: .leading).combined(with: .opacity))
                     }
-                    .padding(16)
-                    .cardBackground(cornerRadius: Theme.Metrics.smallCornerRadius + 4)
-                }
-
-                if let onContinue {
-                    Button(action: onContinue) {
-                        Label("Let's build", systemImage: "arrow.up.to.line")
+                    Button {
+                        if isLast {
+                            onFinish()
+                        } else {
+                            withAnimation(.spring(duration: 0.35)) { page += 1 }
+                        }
+                    } label: {
+                        Label(isLast ? (mode == .onboarding ? "Let's build" : "Got it") : "Next", systemImage: isLast ? "arrow.up.to.line" : "arrow.right")
                     }
-                    .buttonStyle(SkyButtonStyle())
-                    .padding(.top, 6)
-                    .accessibilityIdentifier(AccessibilityID.HowToPlay.continueButton)
+                    .buttonStyle(BlockButtonStyle(color: isLast ? Theme.Colors.coral : Theme.Colors.sky))
+                    .accessibilityIdentifier(isLast ? AccessibilityID.HowToPlay.continueButton : AccessibilityID.HowToPlay.nextButton)
                 }
+                .animation(.spring(duration: 0.3), value: page > 0)
             }
-            .frame(maxWidth: Theme.Metrics.maxContentWidth)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 520)
             .padding(.horizontal, Theme.Metrics.screenPadding)
-            .padding(.bottom, 32)
+            .padding(.vertical, 12)
         }
-        .scrollIndicators(.hidden)
-        .background(SkyBackdrop(cloudCount: 4))
-        .navigationTitle("How to play")
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .preferredColorScheme(.dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.HowToPlay.screen)
+    }
+
+    private func pageCard(_ item: Page) -> some View {
+        VStack(spacing: 16) {
+            Image(item.art)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 400)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .accessibilityHidden(true)
+            Text(item.title)
+                .font(.display(22, weight: .black))
+                .foregroundStyle(Theme.Colors.ink)
+                .multilineTextAlignment(.center)
+            Text(item.detail)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(Theme.Colors.inkSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(18)
+        .paperPanel()
+        .padding(.horizontal, 2)
+        .frame(maxHeight: .infinity, alignment: .center)
+    }
+
+    /// Page indicator drawn as little blocks that stack up as you read.
+    private var progressBlocks: some View {
+        HStack(spacing: 5) {
+            ForEach(pages) { item in
+                Group {
+                    if item.id <= page {
+                        Image(BuilderSkin.starter.blockAsset(forFloor: item.id)).resizable()
+                    } else {
+                        RoundedRectangle(cornerRadius: 3).fill(.white.opacity(0.7))
+                    }
+                }
+                .frame(width: item.id == page ? 30 : 20, height: 9)
+            }
+        }
+        .padding(.vertical, 7)
+        .padding(.horizontal, 12)
+        .background(Capsule().fill(Theme.Colors.ink.opacity(0.35)))
+        .animation(.spring(duration: 0.3), value: page)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Page \(page + 1) of \(pages.count)")
     }
 }

@@ -1,64 +1,38 @@
 import SpriteKit
 
-/// The little builder who rides on the moving block, drawn from vector shapes tinted by the skin.
+/// The builder who rides on the moving block, drawn with the generated character art.
 @MainActor
 final class BuilderNode: SKNode {
-    private let body: SKShapeNode
-    private let head: SKShapeNode
-    private let hat: SKShapeNode
-    private let brim: SKShapeNode
-    private let goggles: SKShapeNode
+    private let sprite: SKSpriteNode
     private let lantern: SKSpriteNode
+    private let lanternGlow: SKSpriteNode
     private let glowColor: UIColor
 
     init(skin: BuilderSkin) {
-        let primary = skin.primary.uiColor
-        let secondary = skin.secondary.uiColor
         glowColor = skin.glow.uiColor
 
-        body = SKShapeNode(path: CGPath(roundedRect: CGRect(x: -9, y: 0, width: 18, height: 22), cornerWidth: 8, cornerHeight: 8, transform: nil))
-        body.fillColor = primary
-        body.strokeColor = secondary
-        body.lineWidth = 2
+        sprite = SKSpriteNode(texture: TextureFactory.art(skin.portraitAsset))
+        sprite.size = CGSize(width: 40, height: 47)
+        sprite.anchorPoint = CGPoint(x: 0.5, y: 0.05)
 
-        head = SKShapeNode(circleOfRadius: 8.5)
-        head.position = CGPoint(x: 0, y: 28)
-        head.fillColor = primary
-        head.strokeColor = secondary
-        head.lineWidth = 2
+        lanternGlow = SKSpriteNode(texture: TextureFactory.softCircle(diameter: 64))
+        lanternGlow.size = CGSize(width: 80, height: 80)
+        lanternGlow.position = CGPoint(x: 0, y: 64)
+        lanternGlow.color = UIColor(red: 1.0, green: 0.8, blue: 0.4, alpha: 1)
+        lanternGlow.colorBlendFactor = 1
+        lanternGlow.blendMode = .add
+        lanternGlow.alpha = 0
 
-        hat = SKShapeNode(path: CGPath(roundedRect: CGRect(x: -9, y: 31, width: 18, height: 9), cornerWidth: 7, cornerHeight: 7, transform: nil))
-        hat.fillColor = secondary
-        hat.strokeColor = .clear
-
-        brim = SKShapeNode(rectOf: CGSize(width: 22, height: 3), cornerRadius: 1.5)
-        brim.position = CGPoint(x: 0, y: 32)
-        brim.fillColor = secondary
-        brim.strokeColor = .clear
-
-        goggles = SKShapeNode(path: CGPath(roundedRect: CGRect(x: -6, y: -2.5, width: 12, height: 5), cornerWidth: 2.5, cornerHeight: 2.5, transform: nil))
-        goggles.position = CGPoint(x: 0, y: 28)
-        goggles.fillColor = glowColor
-        goggles.strokeColor = .clear
-        goggles.glowWidth = 1.5
-
-        lantern = SKSpriteNode(texture: TextureFactory.softCircle(diameter: 64))
-        lantern.size = CGSize(width: 70, height: 70)
-        lantern.position = CGPoint(x: 0, y: 20)
-        lantern.color = UIColor(red: 1.0, green: 0.85, blue: 0.4, alpha: 1)
-        lantern.colorBlendFactor = 1
-        lantern.blendMode = .add
+        lantern = SKSpriteNode(texture: TextureFactory.art("lantern"))
+        lantern.size = CGSize(width: 22, height: 29)
+        lantern.position = CGPoint(x: 0, y: 64)
         lantern.alpha = 0
-        lantern.zPosition = -1
 
         super.init()
 
+        addChild(lanternGlow)
+        addChild(sprite)
         addChild(lantern)
-        addChild(body)
-        addChild(head)
-        addChild(hat)
-        addChild(brim)
-        addChild(goggles)
         zPosition = SceneLayer.builder
         runIdle()
     }
@@ -69,17 +43,19 @@ final class BuilderNode: SKNode {
     }
 
     private func runIdle() {
-        let up = SKAction.moveBy(x: 0, y: 2, duration: 0.7)
+        let up = SKAction.scaleY(to: 1.03, duration: 0.6)
         up.timingMode = .easeInEaseOut
-        head.run(.repeatForever(.sequence([up, up.reversed()])), withKey: "idle")
+        let down = SKAction.scaleY(to: 0.98, duration: 0.6)
+        down.timingMode = .easeInEaseOut
+        sprite.run(.repeatForever(.sequence([up, down])), withKey: "idle")
     }
 
     /// Leans against the direction of travel, `amount` in `-1...1`.
     func setLean(_ amount: CGFloat) {
-        zRotation = -min(max(amount, -1), 1) * 0.18
+        zRotation = -min(max(amount, -1), 1) * 0.14
     }
 
-    /// Little squash-and-stretch hop when landing on a new block.
+    /// Squash-and-stretch hop when landing on a new block.
     func hop() {
         removeAction(forKey: "hop")
         let squash = SKAction.scaleX(to: 1.15, y: 0.85, duration: 0.08)
@@ -89,15 +65,19 @@ final class BuilderNode: SKNode {
         run(.sequence([squash, stretch, settle]), withKey: "hop")
     }
 
-    /// Shows or hides the lantern glow that marks auto-centred floors.
+    /// Shows or hides the Sky Lantern the builder carries while blocks auto-centre.
     func setLantern(_ visible: Bool) {
         lantern.removeAction(forKey: "lantern")
+        lanternGlow.removeAction(forKey: "lantern")
         if visible {
-            lantern.alpha = 0.9
-            let pulse = SKAction.sequence([.scale(to: 1.2, duration: 0.5), .scale(to: 0.9, duration: 0.5)])
-            lantern.run(.repeatForever(pulse), withKey: "lantern")
+            lantern.alpha = 1
+            lanternGlow.alpha = 0.9
+            let bob = SKAction.sequence([.moveBy(x: 0, y: 4, duration: 0.6), .moveBy(x: 0, y: -4, duration: 0.6)])
+            lantern.run(.repeatForever(bob), withKey: "lantern")
+            lanternGlow.run(.repeatForever(.sequence([.scale(to: 1.2, duration: 0.6), .scale(to: 0.9, duration: 0.6)])), withKey: "lantern")
         } else {
             lantern.run(.fadeOut(withDuration: 0.3), withKey: "lantern")
+            lanternGlow.run(.fadeOut(withDuration: 0.3), withKey: "lantern")
         }
     }
 
@@ -133,8 +113,8 @@ final class BuilderNode: SKNode {
         physics.collisionBitMask = 0
         physics.contactTestBitMask = 0
         physicsBody = physics
-        physics.velocity = CGVector(dx: direction * 120, dy: 260)
-        physics.angularVelocity = -direction * 6
-        run(.sequence([.wait(forDuration: 1.4), .fadeOut(withDuration: 0.4), .removeFromParent()]))
+        physics.velocity = CGVector(dx: direction * 90, dy: 240)
+        physics.angularVelocity = -direction * 5
+        run(.sequence([.wait(forDuration: 0.9), .fadeOut(withDuration: 0.3), .removeFromParent()]))
     }
 }

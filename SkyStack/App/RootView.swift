@@ -1,24 +1,30 @@
 import SwiftUI
 
-/// Hosts navigation, presents the game full screen and wires dependencies into the environment.
+/// Hosts the dock and its four sections, and presents the game, the tutorial and settings.
 struct RootView: View {
     let dependencies: AppDependencies
 
-    @State private var path: [Route] = []
+    @State private var tab: AppTab = .skyline
     @State private var isPlaying = false
     @State private var isOnboardingPresented = false
     @State private var shouldPlayAfterOnboarding = false
-    @State private var routeAfterGame: Route?
+    @State private var isGuidePresented = false
+    @State private var isSettingsPresented = false
+    @State private var tabAfterGame: AppTab?
 
     var body: some View {
-        NavigationStack(path: $path) {
-            HomeView(onPlay: requestPlay)
-                .navigationDestination(for: Route.self) { route in
-                    destination(for: route)
-                }
+        ZStack(alignment: .bottom) {
+            section
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaPadding(.bottom, Theme.Metrics.dockHeight + 30)
+                .id(tab)
+                .transition(.opacity)
+
+            DockBar(selection: $tab, equipped: dependencies.profileStore.profile.selectedBuilder, onBuild: requestPlay)
         }
+        .animation(.easeOut(duration: 0.2), value: tab)
         .tint(Theme.Colors.sky)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
         .fullScreenCover(isPresented: $isPlaying, onDismiss: handleGameDismissed) {
             GameView(
                 viewModel: GameViewModel(
@@ -26,42 +32,58 @@ struct RootView: View {
                     settings: dependencies.settings,
                     haptics: dependencies.haptics
                 ),
-                onQuit: { route in
-                    routeAfterGame = route
+                onQuit: { next in
+                    tabAfterGame = next
                     isPlaying = false
                 }
             )
         }
-        .sheet(isPresented: $isOnboardingPresented, onDismiss: handleOnboardingDismissed) {
-            HowToPlayView(isOnboarding: true) {
-                dependencies.settings.hasSeenHowToPlay = true
-                shouldPlayAfterOnboarding = true
-                isOnboardingPresented = false
-            }
+        .sheet(isPresented: $isSettingsPresented) {
+            SettingsView(
+                viewModel: SettingsViewModel(
+                    settings: dependencies.settings,
+                    store: dependencies.profileStore,
+                    haptics: dependencies.haptics
+                ),
+                onClose: { isSettingsPresented = false }
+            )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .background {
+            // Separate host views keep the two full-screen guides from competing with the game cover.
+            Color.clear
+                .fullScreenCover(isPresented: $isOnboardingPresented, onDismiss: handleOnboardingDismissed) {
+                    HowToPlayView(mode: .onboarding) {
+                        dependencies.settings.hasSeenHowToPlay = true
+                        shouldPlayAfterOnboarding = true
+                        isOnboardingPresented = false
+                    }
+                }
+            Color.clear
+                .fullScreenCover(isPresented: $isGuidePresented) {
+                    HowToPlayView(mode: .reference) { isGuidePresented = false }
+                }
         }
         .environment(dependencies.profileStore)
         .environment(dependencies.settings)
     }
 
     @ViewBuilder
-    private func destination(for route: Route) -> some View {
-        switch route {
+    private var section: some View {
+        switch tab {
+        case .skyline:
+            SkylineView(
+                onShowGuide: { isGuidePresented = true },
+                onShowSettings: { isSettingsPresented = true },
+                onOpenCrew: { tab = .crew }
+            )
         case .workshop:
             WorkshopView(viewModel: WorkshopViewModel(store: dependencies.profileStore, haptics: dependencies.haptics))
-        case .builders:
-            BuildersView(viewModel: BuildersViewModel(store: dependencies.profileStore, haptics: dependencies.haptics))
-        case .records:
-            RecordsView()
-        case .howToPlay:
-            HowToPlayView(isOnboarding: false, onContinue: nil)
-        case .settings:
-            SettingsView(viewModel: SettingsViewModel(
-                settings: dependencies.settings,
-                store: dependencies.profileStore,
-                haptics: dependencies.haptics
-            ))
+        case .crew:
+            CrewView(viewModel: BuildersViewModel(store: dependencies.profileStore, haptics: dependencies.haptics))
+        case .logbook:
+            LogbookView()
         }
     }
 
@@ -79,9 +101,9 @@ struct RootView: View {
         isPlaying = true
     }
 
+    /// Leaving the game lands on the skyline (where the record tower lives) unless a section was requested.
     private func handleGameDismissed() {
-        guard let route = routeAfterGame else { return }
-        routeAfterGame = nil
-        path = [route]
+        tab = tabAfterGame ?? .skyline
+        tabAfterGame = nil
     }
 }
