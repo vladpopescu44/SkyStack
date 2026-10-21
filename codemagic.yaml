@@ -44,5 +44,4 @@ workflows:
       tag_patterns:
         - pattern: "release-*"
           include: true
-          source: true
 
